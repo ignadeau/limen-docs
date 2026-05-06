@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Integración Buk (Real-Time)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>BUK INTEGRATION</h1>
+        <p>Sincronización en Tiempo Real mediante Webhooks</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Arquitectura de Integración</h2>
+            <p>La integración con Buk es de alta prioridad y utiliza <strong>Webhooks en tiempo real</strong>. Esto permite que el sistema reaccione instantáneamente ante bajas laborales.</p>
+
+            <h2>2. Proceso de Autenticación</h2>
+            <p>Limen utiliza autenticación simple y segura para las peticiones salientes:</p>
+            <ul>
+                <li><strong>Header Obligatorio:</strong> <code>auth_token: {ApiKey}</code> en cada request.</li>
+                <li><strong>Endpoint de Nómina:</strong> <code>GET /employees/active</code> (descarga inicial de empleados).</li>
+            </ul>
+
+            <h2>3. Webhooks de Baja (Real-Time Bloqueo)</h2>
+            <p>Buk envía una notificación a Limen cuando un contrato finaliza. Para configurar esto, debe ingresar la siguiente URL en el panel de Webhooks de Buk:</p>
+            <div class="example-box">
+                <code>https://api.limen.app/api/webhooks/buk</code><br>
+                <small>Nota: Se debe incluir el header <code>X-Tenant-Id</code> con el ID de su empresa en Limen.</small>
+            </div>
+
+            <h3>Seguridad HMAC-SHA256</h3>
+            <p>Limen protege el endpoint de webhooks verificando la autenticidad de Buk:</p>
+            <ul>
+                <li><strong>Header de Firma:</strong> <code>X-Buk-Signature</code>.</li>
+                <li><strong>Validación:</strong> Limen realiza una comparación de tiempo constante (Constant-time comparison) para evitar ataques de temporización.</li>
+                <li><strong>Acción:</strong> Ante un evento válido de baja, se dispara el proceso <code>ProcessTerminationAsync</code>, bloqueando el acceso en el hardware en menos de 30 segundos.</li>
+            </ul>
+
+            <h2>4. Configuración en Limen</h2>
+            <table class="field-table">
+                <tr><th>Campo</th><th>Descripción</th></tr>
+                <tr><td><strong>Tenant Name</strong></td><td>Subdominio de su cuenta Buk (ej: <code>miempresa</code>).</td></tr>
+                <tr><td><strong>API Key</strong></td><td>Token <code>auth_token</code> generado en el panel Buk.</td></tr>
+                <tr><td><strong>Webhook Secret</strong></td><td>Clave secreta para validar las firmas HMAC de los webhooks.</td></tr>
+            </table>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Ventaja Buk:</strong> Al ser un sistema <em>Event-Driven</em>, la seguridad de su planta aumenta drásticamente al eliminar el tiempo de espera entre el finiquito y el bloqueo físico.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

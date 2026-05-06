@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Limen - Empresa Contratista</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Portal de Contratistas</h1>
+        <p>Gestión de Nómina y Cumplimiento Documental</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Registro de Trabajadores</h2>
+            <p>Cargue la lista de personas que prestarán servicios en las instalaciones del cliente.</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th>Requerido</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>RUT / Identificador <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Formato XX.XXX.XXX-X para personal nacional.</td>
+                    </tr>
+                    <tr>
+                        <td>Especialidad <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Define los documentos obligatorios (ej: Altura Física).</td>
+                    </tr>
+                    <tr>
+                        <td>Patente Camión/Vehículo</td>
+                        <td>NO</td>
+                        <td>Para habilitar ingreso vehicular automático.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2. Carga de Documentación</h2>
+            <p>Suba los archivos PDF o Imágenes requeridos por el Prevencionista.</p>
+            <ul>
+                <li><strong>Formatos permitidos:</strong> PDF, JPG, PNG.</li>
+                <li><strong>Tamaño máximo:</strong> 50 MB por archivo.</li>
+            </ul>
+
+            <div class="example-box">
+                <strong>Habilitación:</strong> Un trabajador solo podrá ingresar cuando <u>todos</u> sus documentos obligatorios hayan sido marcados como <span class="badge" style="background:#22c55e; color:white;">Aprobados</span> por el cliente.
+            </div>
+
+            <h2>3. Alertas de Vencimiento</h2>
+            <p>Revise periódicamente su dashboard para detectar documentos próximos a vencer y evitar el bloqueo de su personal.</p>
+        </div>
+    </div>
+</body>
+</html>

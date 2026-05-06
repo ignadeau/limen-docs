@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - ZKTEco</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ZKTEco Integration</h1>
+        <p>Control de Acceso Físico y Gestión de Patentes</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Endpoints Utilizados</h2>
+            <table class="field-table">
+                <tr><th>Recurso</th><th>Endpoint ZK</th><th>Descripción</th></tr>
+                <tr><td><strong>Personas</strong></td><td>/api/person/add</td><td>Sincroniza identidad y biometría.</td></tr>
+                <tr><td><strong>Patentes</strong></td><td>/api/vehicle/add</td><td>Registra vehículos autorizados.</td></tr>
+                <tr><td><strong>Comandos</strong></td><td>/api/access/remoteOpen</td><td>Apertura remota desde Limen.</td></tr>
+            </table>
+
+            <h2>2. Mapeo de Puertas</h2>
+            <p>El <code>HardwareID</code> en la configuración de puertas de Limen debe coincidir exactamente con el <code>DoorID</code> reportado por el servidor ZK BioSecurity.</p>
+
+            <h2>3. Troubleshooting</h2>
+            <ul>
+                <li><strong>Error 401:</strong> Credenciales de API incorrectas o sesión expirada.</li>
+                <li><strong>Error 504:</strong> Servidor ZK fuera de línea o firewall bloqueando el puerto.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

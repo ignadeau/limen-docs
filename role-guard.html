@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Limen - Guardia de Seguridad</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Guardia de Seguridad / Portería</h1>
+        <p>Control de Acceso Físico, Vehicular y Emergencias</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Punto de Control Vehicular (LPR)</h2>
+            <p>Monitoreo de ingresos por patente y validación de ocupantes.</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                        <th>Significado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge" style="background:#22c55e; color:white;">Autorizado</span></td>
+                        <td>Ninguna (Barrera abre sola)</td>
+                        <td>Patente registrada y anfitrión/trabajador activo.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background:#ef4444; color:white;">Denegado</span></td>
+                        <td>Intervención manual</td>
+                        <td>Patente no reconocida o trabajador bloqueado.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background:#3b82f6; color:white;">Validando</span></td>
+                        <td>Pedir QR/Biometría</td>
+                        <td>Esperando validación de acompañantes.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2. Visitas Walk-in (Inesperadas)</h2>
+            <p>Proceso para visitas que llegan sin invitación previa.</p>
+            <div class="example-box">
+                <strong>Flujo:</strong> Registro en tablet -> Búsqueda de Anfitrión -> Solicitud de Aprobación Real-time -> Impresión de QR/Ingreso.
+            </div>
+
+            <h2>3. Protocolo de Emergencia</h2>
+            <p>En caso de incendio o evacuación, el guardia tiene acceso al botón de liberación total de torniquetes y barreras.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Plan de Pruebas Maestro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        .test-pass { color: #10b981; font-weight: bold; }
+        .test-pending { color: #64748b; font-style: italic; }
+        .test-id { background: var(--navy); color: var(--gold); padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>QA MASTER PLAN</h1>
+        <p>Protocolo de Validación de Funcionalidades v10.0</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Inicio</a>
+            
+            <section class="intro-section">
+                <h2>Certificación de Puesta en Marcha</h2>
+                <p>Este plan de pruebas permite validar la correcta orquestación del sistema desde la creación del Tenant hasta la operación física en terreno.</p>
+            </section>
+
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Módulo</th>
+                        <th>Caso de Prueba</th>
+                        <th>Resultado Esperado</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">SA-01</span></td>
+                        <td>System Admin</td>
+                        <td>Creación de nuevo Tenant y aislamiento de datos.</td>
+                        <td>Base de datos creada y URL accesible.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">TA-01</span></td>
+                        <td>Tenant Admin</td>
+                        <td>Mapeo de Hardware IDs (ZK/Hikvision).</td>
+                        <td>Configuración guardada y probada vía API.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">HO-01</span></td>
+                        <td>Anfitrión</td>
+                        <td>Emisión de Invitación con QR vía WhatsApp.</td>
+                        <td>Visitante recibe link y QR en su celular.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">VI-01</span></td>
+                        <td>Visitante</td>
+                        <td>Auto-registro PII y captura de Selfie.</td>
+                        <td>Datos cifrados y visibles en panel de aprobación.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">PR-01</span></td>
+                        <td>Prevencionista</td>
+                        <td>Bloqueo automático por vencimiento de Mutualidad.</td>
+                        <td>Simulador confirma comando BLOCK_USER.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">GU-01</span></td>
+                        <td>Guardia</td>
+                        <td>Validación LPR de Patente y Acompañantes.</td>
+                        <td>Barrera abierta y aforo actualizado.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                    <tr class="hover-lift">
+                        <td><span class="test-id">MO-01</span></td>
+                        <td>App Móvil</td>
+                        <td>Validación de pasajeros en modo Offline.</td>
+                        <td>Registros guardados en SQLite y sincronizados.</td>
+                        <td class="test-pending">PENDIENTE</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box pulse-gold">
+                <strong>Sugerencia:</strong> Utilice el archivo <code>plan-de-pruebas.csv</code> adjunto en esta carpeta para llevar el seguimiento detallado en Microsoft Excel.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

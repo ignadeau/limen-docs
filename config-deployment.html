@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Despliegue</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Docker Deployment</h1>
+        <p>Orquestación y Entorno de Producción</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Docker Compose</h2>
+            <p>El despliegue estándar utiliza 3 servicios:</p>
+            <ul>
+                <li><strong>limen-web:</strong> Portal Blazor (Puerto 8080).</li>
+                <li><strong>limen-api:</strong> API REST (Puerto 8081).</li>
+                <li><strong>limen-mobile-api:</strong> API Móvil (Puerto 8082).</li>
+            </ul>
+
+            <h2>2. Nginx</h2>
+            <p>Se recomienda usar Nginx como reverse proxy para gestionar SSL y subdominios dinámicos.</p>
+        </div>
+    </div>
+</body>
+</html>

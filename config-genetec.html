@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración Genetec</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>GENETEC SECURITY CENTER</h1>
+        <p>Integración Enterprise: Synergis (Acceso) + Omnicast (Video)</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Web SDK y Web Server</h2>
+            <p>La integración requiere que el servidor de Genetec tenga instalado el rol de <strong>Web SDK</strong>. Limen utiliza REST API para interactuar con el sistema.</p>
+
+            <h2>2. Autenticación y Seguridad</h2>
+            <p>Limen utiliza autenticación de tipo "OAuth2" o "Basic" según la configuración de Genetec. Se recomienda el uso de un certificado SSL válido para evitar fallos de seguridad.</p>
+
+            <h2>3. Orquestación de Synergis (Acceso)</h2>
+            <p>Limen gestiona los <strong>Cardholders</strong> y sus <strong>Credentials</strong>:</p>
+            <div class="example-box">
+                <strong>Flujo Maestro:</strong> Cuando una visita se auto-registra en Limen, se crea un <em>Temporary Cardholder</em> en Genetec y se le asigna un <em>Access Rule</em> específico por el tiempo que dure su invitación.
+            </div>
+
+            <h2>4. Integración LPR (AutoVu)</h2>
+            <p>Limen consume los eventos de lectura de patentes desde el motor AutoVu, permitiendo validar aforo vehicular en complejos industriales de alta densidad.</p>
+        </div>
+    </div>
+</body>
+</html>

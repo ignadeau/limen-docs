@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Sincronización de Identidades</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>IDENTITY ORCHESTRATION</h1>
+        <p>AD, Entra ID y Sistemas de RRHH (GeoVictoria)</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. El Ciclo de Vida de la Identidad</h2>
+            <p>Limen automatiza el aprovisionamiento. Cuando RRHH crea un empleado, Limen lo detecta, crea su usuario y le otorga acceso físico automáticamente.</p>
+
+            <h2>2. Configuración de Entra ID (Azure AD)</h2>
+            <p>Utilizamos el <strong>Microsoft Graph SDK</strong> para la sincronización.</p>
+            <table class="field-table">
+                <tr><th>Parámetro</th><th>Valor Requerido</th></tr>
+                <tr><td>Application ID</td><td>GUID de la App en Azure.</td></tr>
+                <tr><td>Directory ID</td><td>GUID del Tenant de Microsoft.</td></tr>
+                <tr><td>Client Secret</td><td>Llave secreta para acceso offline.</td></tr>
+                <tr><td>Group Filter</td><td>Filtro para sincronizar solo grupos específicos (ej: "Planta_Principal").</td></tr>
+            </table>
+
+            <h2>3. Sincronización de RRHH (GeoVictoria)</h2>
+            <p>Limen consulta el API de GeoVictoria para obtener el estado laboral actual. Si un empleado es marcado como "Finiquitado", Limen dispara la **Regla de los 30 Segundos**.</p>
+        </div>
+    </div>
+</body>
+</html>

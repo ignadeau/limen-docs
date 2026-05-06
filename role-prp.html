@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Limen - Prevencionista</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Prevencionista / Oficial de Seguridad</h1>
+        <p>Gestión de Riesgos y Aprobación de Personal Externo</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Revisión de Documentos Contratistas</h2>
+            <p>Asegure que todo trabajador externo cumpla con los requisitos de seguridad antes de permitir su ingreso físico.</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Acción</th>
+                        <th>Campos de Revisión</th>
+                        <th>Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Aprobar Documento</td>
+                        <td>Validez de fecha, RUT coincidente, Firma.</td>
+                        <td>Habilita trabajador (si es el último crítico).</td>
+                    </tr>
+                    <tr>
+                        <td>Rechazar Documento</td>
+                        <td>Motivo de rechazo (campo obligatorio).</td>
+                        <td>Notifica al contratista para nueva carga.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2. Gestión de Vencimientos</h2>
+            <p>El sistema envía alertas a los 30, 15 y 5 días previos al vencimiento de un documento crítico.</p>
+            
+            <div class="example-box">
+                <strong>Importante:</strong> Si un documento crítico vence (ej: Seguro Accidentes), Limen bloqueará automáticamente el acceso del trabajador en el sistema ZK.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

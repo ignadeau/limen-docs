@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración VMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>VIDEO MANAGEMENT SYSTEM (VMS)</h1>
+        <p>Integración de Evidencia Visual y Forense</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Objetivo de la Integración</h2>
+            <p>Limen no graba video, sino que "pide" clips al VMS (Milestone, Genetec o HikCentral) basándose en eventos de acceso. Esto permite que al ver una entrada vehicular, usted vea el clip de video asociado en la misma pantalla.</p>
+
+            <h2>2. Configuración del Conector VMS</h2>
+            <p>Vaya a <code>Administración > Videovigilancia > Fuentes de Video</code>.</p>
+            <table class="field-table">
+                <tr><th>Campo</th><th>Descripción</th></tr>
+                <tr><td>Proveedor</td><td>Seleccione entre Milestone, Genetec o HikCentral.</td></tr>
+                <tr><td>Servidor de Video</td><td>Dirección IP y puerto de la API del VMS.</td></tr>
+                <tr><td>Token/ApiKey</td><td>Credencial para el túnel de comunicación segura.</td></tr>
+            </table>
+
+            <h2>3. Mapeo Cámara-Puerta</h2>
+            <p>Para que el video aparezca automáticamente, debe vincular la cámara física con la puerta lógica en Limen.</p>
+            <div class="example-box">
+                <strong>Procedimiento:</strong><br>
+                1. Obtenga el <code>CameraGUID</code> o <code>ChannelID</code> desde su VMS.<br>
+                2. En Limen (Menú Puertas), asigne esa cámara a la puerta correspondiente.<br>
+                3. Configure el "Pre-record" (ej: 5 seg antes del evento) y "Post-record" (ej: 10 seg después).
+            </div>
+
+            <h2>4. Búsqueda Forense Unificada</h2>
+            <p>En el módulo de <strong>Búsqueda Forense</strong>, usted puede buscar por "Nombre de Persona". Limen consultará todos sus ingresos y traerá los clips de video de las diferentes cámaras por donde pasó esa persona, creando una línea de tiempo visual.</p>
+        </div>
+    </div>
+</body>
+</html>

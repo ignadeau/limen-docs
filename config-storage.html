@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Almacenamiento</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Document Storage Setup</h1>
+        <p>Configuración Multi-backend y Cifrado</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Configuración por Tenant</h2>
+            <p>Cada cliente puede tener su propio backend. Configure las credenciales en el panel administrativo del Tenant.</p>
+
+            <table class="field-table">
+                <tr><th>Backend</th><th>Parámetros</th></tr>
+                <tr><td><strong>Local</strong></td><td>Path en disco (ej: /var/limen/docs).</td></tr>
+                <tr><td><strong>S3</strong></td><td>Endpoint, Bucket, AccessKey, SecretKey.</td></tr>
+                <tr><td><strong>Azure</strong></td><td>ConnectionString, ContainerName.</td></tr>
+            </table>
+
+            <h2>2. DataProtection</h2>
+            <p>Las credenciales se cifran antes de guardarse en la BD. Asegúrese de que el servidor tenga acceso al repositorio de llaves configurado en <code>Program.cs</code>.</p>
+        </div>
+    </div>
+</body>
+</html>

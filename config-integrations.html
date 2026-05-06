@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Integraciones</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>System Integrations</h1>
+        <p>Conexión con Entra ID, RRHH y APIs de Terceros</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Identidad (Entra ID / AD)</h2>
+            <p>Configure el App Registration en Azure Portal y proporcione el <code>ClientId</code> y <code>TenantId</code> en Limen.</p>
+
+            <h2>2. RRHH (GeoVictoria)</h2>
+            <p>La integración con GeoVictoria permite sincronizar bajas laborales en tiempo real. Se requiere el endpoint de la API y el Token de autorización.</p>
+
+            <h2>3. Webhooks de LPR</h2>
+            <p>Las cámaras LPR deben apuntar a: <code>https://api.limen.app/api/lpr/event</code> incluyendo el header <code>X-Api-Key</code>.</p>
+        </div>
+    </div>
+</body>
+</html>

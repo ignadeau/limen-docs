@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración SAP & Workday</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ERP INTEGRATION (SAP / WORKDAY)</h1>
+        <p>Sincronización de Estructura Organizacional y Jerarquías</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Sincronización Organizacional</h2>
+            <p>Para grandes corporaciones, Limen hereda la estructura de departamentos, jefaturas y centros de costo directamente desde el ERP (SAP SuccessFactors o Workday).</p>
+
+            <h2>2. Integración SAP SuccessFactors</h2>
+            <p>Limen utiliza el protocolo <strong>OData v2/v4</strong> para leer las entidades <code>User</code> y <code>EmpJob</code>.</p>
+            <ul>
+                <li><strong>Autenticación:</strong> OAuth 2.0 con Certificado X.509.</li>
+            </ul>
+
+            <h2>3. Integración Workday</h2>
+            <p>Mediante el servicio <strong>Workday Web Services (WWS)</strong>, Limen consulta los eventos de ciclo de vida (Hire, Terminate, Transfer).</p>
+        </div>
+    </div>
+</body>
+</html>

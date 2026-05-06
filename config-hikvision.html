@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración Hikvision HikCentral</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>HIKVISION HIKCENTRAL INTEGRATION</h1>
+        <p>Orquestación de Acceso y Video sobre OpenAPI</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Requisitos de la Plataforma</h2>
+            <p>Limen se integra con <strong>HikCentral Professional v2.0+</strong> utilizando el protocolo HTTPS y el módulo de OpenAPI.</p>
+
+            <h2>2. Configuración de Credenciales</h2>
+            <p>En HikCentral, cree un "App" en el centro de API y obtenga:</p>
+            <table class="field-table">
+                <tr><th>Parámetro</th><th>Descripción</th></tr>
+                <tr><td>AppKey</td><td>Identificador único de la aplicación Limen.</td></tr>
+                <tr><td>AppSecret</td><td>Firma para el cifrado de las peticiones (HmacSHA256).</td></tr>
+                <tr><td>Puerto OpenAPI</td><td>Default: 80 para HTTP o 443 para HTTPS.</td></tr>
+            </table>
+
+            <h2>3. Mapeo de Dispositivos</h2>
+            <ul>
+                <li><strong>Controladoras de Acceso:</strong> Utilice el <code>IndexCode</code> de la puerta en HikCentral como el <code>HardwareID</code> en Limen.</li>
+                <li><strong>Cámaras LPR:</strong> Limen recibe el evento de patente vía <code>/api/resource/v1/vehicle/alarm</code>.</li>
+            </ul>
+
+            <h2>4. Sincronización de Biometría Facial</h2>
+            <p>Limen envía las selfies de las visitas directamente a la base de datos de rostros de HikCentral. Al ser aprobado en Limen, el rostro se propaga a los terminales de la serie MinMoe en menos de 10 segundos.</p>
+        </div>
+    </div>
+</body>
+</html>

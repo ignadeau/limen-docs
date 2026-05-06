@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Cumplimiento Detallado Ley 21.719</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MARCO LEGAL Y CUMPLIMIENTO</h1>
+        <p>Implementación Técnica de la Ley 21.719 en Limen</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Categorización de Datos (Art. 2)</h2>
+            <p>La Ley 21.719 establece una jerarquía de protección según la naturaleza del dato. Limen clasifica la información en tres niveles de seguridad:</p>
+            <ul>
+                <li><strong>Datos de Identificación (Nivel 1):</strong> Nombre, RUT, Correo, Teléfono. Base legal: Ejecución de contrato o interés legítimo de seguridad.</li>
+                <li><strong>Datos Biométricos (Nivel 2 - Sensibles):</strong> Imagen facial (selfie) utilizada para reconocimiento. <em>Requiere consentimiento explícito y medidas de seguridad reforzadas.</em></li>
+                <li><strong>Datos de Localización y Comportamiento (Nivel 3):</strong> Registros de entrada/salida, zonas visitadas, patentes. <em>Utilizados exclusivamente para seguridad física.</em></li>
+            </ul>
+
+            <h2>2. Principios del Tratamiento (Art. 4 al 11)</h2>
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Principio</th>
+                        <th>Requisito Legal</th>
+                        <th>Implementación Técnica en Limen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Licitud</strong></td>
+                        <td>El tratamiento debe tener una fuente legal o consentimiento.</td>
+                        <td>Módulo de consentimiento interactivo (Opt-in) con registro de fecha y versión del texto aceptado.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finalidad</strong></td>
+                        <td>Prohibición de uso para fines distintos a los declarados.</td>
+                        <td>Aislamiento técnico por Tenant. Los datos capturados para "Seguridad" no son accesibles para módulos de "Marketing".</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Proporcionalidad</strong></td>
+                        <td>Solo capturar lo estrictamente necesario.</td>
+                        <td>Configuración granular: si un Sitio no requiere Biometría, el sistema deshabilita la cámara en el tótem/portal.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seguridad</strong></td>
+                        <td>Garantizar integridad, disponibilidad y confidencialidad.</td>
+                        <td>Cifrado AES-256 en reposo, comunicación TLS 1.3 y hashing de identificadores sensibles.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>3. Derechos de los Titulares (Derechos ARCO)</h2>
+            <p>Limen automatiza la respuesta a los derechos garantizados en los Artículos 16 al 20:</p>
+            <ul>
+                <li><strong>Derecho de Acceso (Art. 16):</strong> El sistema permite generar un reporte automatizado con todos los datos que el Tenant posee del titular.</li>
+                <li><strong>Derecho de Rectificación (Art. 17):</strong> Portales de autogestión para que visitas y contratistas actualicen su información.</li>
+                <li><strong>Derecho de Cancelación / Supresión (Art. 18):</strong> Módulo <code>ErasureRequest</code>. Al ejecutarse, el sistema elimina documentos físicos y anonimiza campos en la base de datos.</li>
+                <li><strong>Derecho de Oposición (Art. 19):</strong> Capacidad de revocar el consentimiento, resultando en la baja automática de los perfiles de acceso físico.</li>
+            </ul>
+
+            <h2>4. Transferencia Internacional de Datos (Art. 31)</h2>
+            <p>Si el Tenant elige backends cloud (S3/Azure), Limen asegura el cumplimiento mediante:</p>
+            <div class="example-box">
+                <strong>Cláusulas Contractuales:</strong> Selección de regiones de almacenamiento que garanticen niveles de protección adecuados según la Agencia de Protección de Datos.
+            </div>
+
+            <h2>5. Medidas de Seguridad y Reporte de Brechas (Art. 15 y 15 bis)</h2>
+            <p>Limen facilita la detección y reporte de brechas de seguridad:</p>
+            <ul>
+                <li><strong>Logs de Acceso:</strong> Auditoría detallada de cada consulta a datos sensibles (quién vio qué selfie).</li>
+                <li><strong>Integridad:</strong> SHA-256 para verificar que los documentos almacenados no han sido alterados.</li>
+            </ul>
+
+            <h2>6. Transferencia Internacional y Cloud (Art. 31)</h2>
+            <p>La ley exige que la transferencia de datos a países sin niveles adecuados de protección sea regulada. Limen permite al Tenant elegir regiones que garantizan estándares equivalentes:</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Ubicación</th>
+                        <th>Regiones Recomendadas (AWS/Azure/GCP)</th>
+                        <th>Nivel de Cumplimiento Legal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Chile (Local)</strong></td>
+                        <td>Santiago (<code>chilecentral</code>, <code>southamerica-west1</code>)</td>
+                        <td><strong>Soberanía Total:</strong> Es la opción preferida. Al no haber salida de datos del país, no se requiere reportar transferencias internacionales. Ideal para Biometría.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Unión Europea</strong></td>
+                        <td>Fráncfort (<code>eu-central-1</code>), Irlanda (<code>eu-west-1</code>)</td>
+                        <td><strong>Gold Standard (GDPR):</strong> Máximo estándar mundial. La Ley 21.719 es un espejo del GDPR europeo, por lo que estas regiones son jurídicamente seguras.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Brasil</strong></td>
+                        <td>São Paulo (<code>sa-east-1</code>, <code>brazilsouth</code>)</td>
+                        <td><strong>Equivalencia Regional:</strong> Brasil cuenta con la LGPD, ley equivalente a la chilena. Ofrece el mejor equilibrio entre cumplimiento y latencia para Sudamérica.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fff7ed; border-left-color: #f97316;">
+                <strong>Nota sobre Regiones en EE.UU.:</strong> Aunque son seguras técnicamente, la <em>USA CLOUD Act</em> permite al gobierno estadounidense solicitar datos por seguridad nacional. Para Datos Sensibles (Biometría), se recomienda evitar estas regiones o utilizar cifrado de lado del cliente (Client-Side Encryption) donde el Tenant mantenga la llave física en Chile.
+            </div>
+
+            <h2>7. Régimen de Sanciones (Art. 33 al 45)</h2>
+            <p>El incumplimiento de la normativa puede acarrear graves consecuencias para la organización:</p>
+            <div class="example-box" style="background: #fef2f2; border-left-color: #ef4444;">
+                <strong>Infracciones Gravísimas:</strong> Multas de hasta 20.000 UTM (más de $1.300 millones CLP). El tratamiento de datos sensibles sin consentimiento o la vulneración de medidas de seguridad se consideran infracciones de este nivel.
+            </div>
+            <p>Limen actúa como un mitigador de riesgo legal mediante el control estricto de accesos y la automatización de la retención de datos.</p>
+
+            <h2>8. Responsabilidad del Responsable (Accountability)</h2>
+            <p>La ley traslada la carga de la prueba a la empresa (Tenant). Limen provee el <strong>Registro de Actividades de Tratamiento (RAT)</strong>, demostrando proactivamente qué datos se capturan, para qué fin y cuándo se eliminan.</p>
+        </div>
+    </div>
+</body>
+</html>

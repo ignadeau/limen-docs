@@ -1,0 +1,17 @@
+ID;Modulo;Caso de Prueba;Pasos;Resultado Esperado;Resultado Real;Estado
+SA-01;System Admin;Creación de Tenant;Acceder a /admin/tenants y crear nuevo registro;Aislamiento de datos confirmado y acceso vía subdominio;;PENDIENTE
+SA-02;System Admin;Configuración Storage;Configurar un bucket S3 y probar conexión;Mensaje de "Conexión Exitosa" y persistencia de llaves;;PENDIENTE
+TA-01;Tenant Admin;Configuración de Sitios;Crear Portería Norte y vincular a Zona Acceso;Jerarquía visible en el Dashboard operativo;;PENDIENTE
+TA-02;Tenant Admin;Mapeo de Hardware;Ingresar ID de ZK en una puerta nueva;Comando de prueba abre la barrera física/simulada;;PENDIENTE
+TA-03;Tenant Admin;Sincronización AD;Vincular App Registration de Azure;Lista de empleados aparece poblada en Limen;;PENDIENTE
+HO-01;Anfitrión;Invitación de Visita;Crear visita con fecha y hora futura;Visitante recibe correo con link de registro;;PENDIENTE
+HO-02;Anfitrión;Gestión de Patente;Registrar patente personal y marcar como Activa;Cámara LPR reconoce vehículo y abre barrera;;PENDIENTE
+VI-01;Visitante;Self-Check-In;Completar formulario, aceptar PII y subir selfie;Estado en Limen pasa de Invited a PendingApproval;;PENDIENTE
+CO-01;Contratista;Carga de Personal;Subir nómina vía Excel;Trabajadores creados con estado Documentación Pendiente;;PENDIENTE
+PR-01;Prevencionista;Revisión PRP;Aprobar seguro de accidentes de un trabajador;El trabajador cambia a estado Habilitado inmediatamente;;PENDIENTE
+PR-02;Prevencionista;Bloqueo Manual;Presionar Bloquear en un perfil activo;El simulador/hardware confirma comando BLOCK_USER;;PENDIENTE
+GU-01;Guardia;Checkpoint LPR;Simular detección de patente aprobada;Semáforo verde en pantalla y apertura automática;;PENDIENTE
+GU-02;Guardia;Visita Walk-in;Registrar RUT de persona que llega sin invitación;Anfitrión recibe notificación Push para aprobar;;PENDIENTE
+GU-03;Guardia;Modo Evacuación;Presionar Liberar Todo en Emergencia;Torniquetes abiertos y PDF de Muster List generado;;PENDIENTE
+MO-01;Op. Bus;Inicio de Ruta;Seleccionar trayecto y descargar lista;Mensaje "Datos sincronizados para modo offline";;PENDIENTE
+MO-02;Op. Bus;Escaneo QR;Validar código QR de un empleado;Sonido de éxito y conteo de asientos actualizado;;PENDIENTE

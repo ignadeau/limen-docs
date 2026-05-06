@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Administrador de Cliente</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>TENANT ADMINISTRATOR</h1>
+        <p>Configuración de Negocio y Reglas de Operación</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Índice</a>
+            
+            <section class="intro-section">
+                <h2>Descripción del Rol</h2>
+                <p>Usted es el responsable de orquestar la infraestructura física y lógica de su organización.</p>
+            </section>
+
+            <h2>1. Configuración de Sitios y Puertas</h2>
+            <table class="field-table animate-in" style="animation-delay: 0.2s;">
+                <thead>
+                    <tr><th>Elemento</th><th>Descripción Técnica</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-lift"><td>Site</td><td>Ubicación física (Portería, Edificio).</td></tr>
+                    <tr class="hover-lift"><td>Access Zone</td><td>Área lógica con control de aforo.</td></tr>
+                    <tr class="hover-lift"><td>Door</td><td>Vínculo con el ID físico del hardware.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="example-box pulse-gold">
+                <strong>Configuración Crítica:</strong> El campo <code>ZkDoorId</code> es el único puente de comunicación con el hardware. Verifique su exactitud en la consola de ZK.
+            </div>
+
+            <h2>2. Gobernanza de Privacidad</h2>
+            <p>Módulo de retención automática para cumplimiento de la Ley 21.719.</p>
+            <ul>
+                <li>Anonimización de Visitas: Programada cada 30 días.</li>
+                <li>Eliminación de Documentos: Basado en fin de vigencia de contrato.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

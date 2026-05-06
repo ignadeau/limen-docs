@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Guía del Simulador de Hardware</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>HARDWARE SIMULATOR</h1>
+        <p>Pruebas de Flujo sin Dependencia Física</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. ¿Qué es el Simulador?</h2>
+            <p>Es un componente interno (`InMemoryAccessControlClient`) que emula el comportamiento de un servidor ZK o Hikvision. Viene activado por defecto en la versión de desarrollo.</p>
+
+            <h2>2. Cómo Simular Eventos</h2>
+            <p>Para ver el simulador en acción, realice cualquier operación de alta o baja en el sistema:</p>
+            <ul>
+                <li><strong>Alta de Visita:</strong> Al aprobar una visita, el simulador escribirá en los logs la recepción de la selfie y los datos.</li>
+                <li><strong>Bloqueo de Trabajador:</strong> Al bloquear a un contratista, el simulador mostrará una alerta de "BLOQUEO INMEDIATO" en la consola.</li>
+                <li><strong>Apertura de Puerta:</strong> En el Dashboard de Portería, presione "Abrir Barrera". El simulador confirmará la orden de apertura remota.</li>
+            </ul>
+
+            <h2>3. Validación vía Logs</h2>
+            <p>Abra la terminal donde corre <strong>Limen.Web</strong>. Verá mensajes con el prefijo <span class="spec-badge">[SIMULADOR]</span>:</p>
+            <div class="example-box" style="background: #0f172a; color: #10b981; font-family: monospace;">
+                [14:30:05 INF] [SIMULADOR] Sincronizando Persona: Juan Perez (PIN: 12345678-9).<br>
+                [14:30:08 INF] [SIMULADOR] 🚪 COMANDO REMOTO: Abriendo puerta 'Portería_Norte'.
+            </div>
+
+            <div class="example-box pulse-gold">
+                <strong>Nota:</strong> Como es "InMemory", los estados del simulador se pierden al reiniciar el servidor. Para pruebas persistentes, se recomienda la integración real con la base de datos de ZK.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

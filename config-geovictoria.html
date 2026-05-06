@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Integración GeoVictoria (Polling)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>GEOVICTORIA INTEGRATION</h1>
+        <p>Sincronización de Identidad mediante Polling</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Arquitectura de Integración</h2>
+            <p>La integración con GeoVictoria se basa en un modelo de <strong>Polling (Consulta Periódica)</strong>. Limen consulta activamente el estado de los empleados cada cierto tiempo, ya que GeoVictoria no expone Webhooks para eventos de baja en tiempo real en este conector.</p>
+
+            <h2>2. Proceso de Autenticación</h2>
+            <p>Limen utiliza un flujo de token dinámico para garantizar la seguridad de la comunicación:</p>
+            <ul>
+                <li><strong>Endpoint:</strong> <code>POST /api/v1/Login</code></li>
+                <li><strong>Credenciales:</strong> Requiere <code>ConsumerKey</code> y <code>ConsumerSecret</code> provistos por el equipo de integraciones de GeoVictoria.</li>
+                <li><strong>Gestión de Token:</strong> El Bearer Token obtenido se cachea en Limen durante 50 minutos.</li>
+                <li><strong>Failsafe:</strong> El sistema implementa <em>Auto-retry</em> automático en caso de recibir un error 401 (Unauthorized).</li>
+            </ul>
+
+            <h2>3. Sincronización de Empleados</h2>
+            <p>Para obtener la nómina vigente, Limen ejecuta:</p>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
+                POST /api/user/list<br>
+                Payload: { "status": 1 } // Filtra solo empleados activos
+            </div>
+
+            <h2>4. Configuración por Tenant</h2>
+            <p>En el panel de Administración de Limen, debe configurar los siguientes campos obligatorios:</p>
+            <table class="field-table">
+                <tr><th>Campo</th><th>Descripción</th></tr>
+                <tr><td><strong>BaseUrl</strong></td><td>URL base de la API de GeoVictoria para su instancia.</td></tr>
+                <tr><td><strong>ConsumerKey</strong></td><td>Llave de acceso de la aplicación.</td></tr>
+                <tr><td><strong>ConsumerSecret</strong></td><td>Secreto de la aplicación (se guarda cifrado).</td></tr>
+            </table>
+
+            <div class="example-box pulse-gold">
+                <strong>Nota Importante:</strong> Al no contar con Webhooks, el bloqueo de bajas laborales depende de la frecuencia del job de sincronización. Para bloqueos manuales inmediatos, utilice el botón de "Bloqueo" en el perfil del usuario en Limen.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

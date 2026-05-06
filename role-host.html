@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Limen - Anfitrión</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Anfitrión / Colaborador</h1>
+        <p>Autogestión de Visitas y Vehículos Personales</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Crear Invitación de Visita</h2>
+            <p>Registre a sus invitados para facilitar su ingreso y evitar esperas en portería.</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th>Requerido</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nombre del Visitante <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Nombre completo de la persona invitada.</td>
+                    </tr>
+                    <tr>
+                        <td>Correo Electrónico <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Donde recibirá el link de auto-registro.</td>
+                    </tr>
+                    <tr>
+                        <td>Patente Vehicular</td>
+                        <td>NO</td>
+                        <td>Si viene en vehículo, reserva plaza de parking.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2. Gestión de Mis Patentes</h2>
+            <p>Registre sus vehículos personales para el reconocimiento automático por cámaras LPR.</p>
+            
+            <div class="example-box">
+                <strong>Regla de Aforo:</strong> Puede registrar múltiples vehículos, pero solo <u>uno</u> puede estar marcado como "Activo" simultáneamente para habilitar el acceso.
+            </div>
+
+            <h2>3. Aprobación de Visitas</h2>
+            <p>Cuando un visitante completa su auto-registro, usted recibirá una notificación para aprobar el ingreso definitivo desde su panel.</p>
+        </div>
+    </div>
+</body>
+</html>

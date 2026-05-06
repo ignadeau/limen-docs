@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Limen - System Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>System Administrator</h1>
+        <p>Gestión Global de Infraestructura y Multi-tenancy</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="index.html" class="back-link">← Volver al Centro de Documentación</a>
+            
+            <h2>1. Gestión de Clientes (Tenants)</h2>
+            <p>El System Admin es el único con capacidad para crear y suspender clientes (Tenants) en la plataforma global.</p>
+            
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th>Requerido</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nombre del Tenant <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Nombre legal de la empresa cliente.</td>
+                    </tr>
+                    <tr>
+                        <td>Subdominio <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Identificador único para la URL (ej: <em>cliente</em> para cliente.limen.app).</td>
+                    </tr>
+                    <tr>
+                        <td>Email de Contacto <span class="required">*</span></td>
+                        <td>SÍ</td>
+                        <td>Correo del administrador principal del cliente.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2. Configuración Global de Almacenamiento</h2>
+            <p>Define los backends disponibles (Local, S3, Azure) para que los Tenants los configuren.</p>
+            
+            <div class="example-box">
+                <strong>Tarea Proactiva:</strong> Monitorear los Audit Logs globales para detectar intentos de acceso fallidos o cambios en la configuración de seguridad.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

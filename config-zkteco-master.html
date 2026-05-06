@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Limen - Manual Maestro ZKTEco</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>ZKTECO MASTER SETUP</h1>
+        <p>Guía Definitiva de Integración de Hardware</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card hover-lift">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Requisitos Previos</h2>
+            <p>ZKBio CVSecurity 5.0.0+, Licencia API activa y visibilidad de red (Puerto 8098).</p>
+
+            <h2>2. Payloads Técnicos</h2>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
+                POST /api/person/add<br>
+                { "pin": "12345", "name": "Juan Perez", "personPhoto": "base64..." }
+            </div>
+
+            <h2>3. Mapeo de Puertas</h2>
+            <p>Utilice el <code>DoorID</code> de ZK como <code>ZkDoorId</code> en Limen para habilitar la apertura remota y el monitoreo.</p>
+            
+            <div style="margin-top: 2rem;">
+                <a href="config-zkteco-detail.html" class="menu-item hover-lift">
+                    <h3>Ir a Detalle de Sincronización</h3>
+                    <p>Mapeo avanzado de horarios y niveles de acceso.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración - Base de Datos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>DATABASE SETUP</h1>
+        <p>SQL Server & Entity Framework Core 10</p>
+    </header>
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+            
+            <h2>1. Requisitos del Servidor</h2>
+            <p>Limen utiliza <strong>SQL Server 2019+</strong> (instancia local o remota).</p>
+
+            <h2>2. Connection String</h2>
+            <p>Configure la cadena de conexión en <code>appsettings.json</code>:</p>
+            <div class="example-box" style="font-family: monospace; background: #0A1228; color: #f8fafc;">
+                "ConnectionStrings": {<br>
+                &nbsp;&nbsp;"DefaultConnection": "Server=db.example.com;Database=LimenDB;User Id=sa_user;Password=FakePassword123!;TrustServerCertificate=True;"<br>
+                }
+            </div>
+
+            <h2>3. Aplicación de Migraciones</h2>
+            <p>Ejecute la herramienta <strong>DbMigrator</strong> para crear el esquema y los datos iniciales (Seed):</p>
+            <div class="example-box">
+                <code>dotnet run --project tools/Limen.DbMigrator</code>
+            </div>
+            
+            <h2>4. Datos de Semilla (Seed)</h2>
+            <p>Al finalizar la migración, se crean automáticamente los siguientes datos de acceso inicial:</p>
+            <ul>
+                <li><strong>Tenant:</strong> demo</li>
+                <li><strong>Admin:</strong> admin@limen.app / Password: <span class="spec-badge">Limen!App2026</span></li>
+            </ul>
+
+            <div class="example-box pulse-gold">
+                <strong>Seguridad:</strong> Se recomienda encarecidamente cambiar la contraseña del usuario administrador inmediatamente después del primer inicio de sesión.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
