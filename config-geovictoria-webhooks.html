@@ -3,118 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Limen - Webhooks de GeoVictoria (Detalle Técnico)</title>
+    <title>Limen - GeoVictoria: Limitaciones y Comparativa</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
+<body class="animate-in">
     <header>
-        <h1>GEOVICTORIA WEBHOOKS DEEP-DIVE</h1>
-        <p>Sincronización en Tiempo Real y Bloqueos de Seguridad Críticos</p>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>GEOVICTORIA</h1>
+        <p>Limitaciones del Conector y Operación sin Webhooks</p>
     </header>
 
     <div class="container">
         <div class="main-card">
-            <a href="config-geovictoria.html" class="back-link">← Volver a Integración GeoVictoria</a>
-            
-            <h2>1. Arquitectura del Webhook</h2>
-            <p>A diferencia de la sincronización programada (polling), los Webhooks permiten que GeoVictoria "empuje" la información a Limen en el instante exacto en que ocurre el evento. Esto es vital para las <strong>Bajas Laborales</strong>.</p>
+            <a href="config-geovictoria.html" class="back-link">← Volver a Configuración GeoVictoria</a>
 
-            <h2>2. Configuración del Endpoint en Limen</h2>
-            <p>Usted debe configurar en el panel de GeoVictoria la URL de destino para los eventos. Limen expone un endpoint dedicado:</p>
-            <div class="example-box">
-                <code>https://api.limen.app/api/webhooks/geovictoria</code>
+            <!-- ═══════════════════════════════════════════════════════
+                 POR QUÉ NO HAY WEBHOOKS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>Por qué GeoVictoria no tiene Webhooks en Limen</h2>
+
+            <div class="example-box pulse-gold">
+                ⚠️ <strong>Estado actual:</strong> El conector de GeoVictoria en Limen opera
+                exclusivamente con <strong>Polling Periódico</strong>. No existe un endpoint de webhook
+                activo para GeoVictoria. La página anterior de este tutorial documentaba
+                funcionalidad no implementada — esta versión refleja el estado real del sistema.
             </div>
 
-            <h2>3. Eventos Soportados y Payloads</h2>
-            <p>Limen procesa principalmente el evento de <strong>"Cese de Funciones"</strong> o <strong>"Término de Contrato"</strong>. El formato esperado es JSON:</p>
-            
-            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
-                {<br>
-                &nbsp;&nbsp;"EventType": "EMPLOYEE_TERMINATED",<br>
-                &nbsp;&nbsp;"Timestamp": "2026-05-05T14:30:05Z",<br>
-                &nbsp;&nbsp;"Data": {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;"Identifier": "12345678-9",<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;"FullName": "Juan Perez",<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;"Reason": "Termino de Contrato",<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;"EffectiveDate": "2026-05-05T15:00:00Z"<br>
-                &nbsp;&nbsp;}<br>
-                }
-            </div>
+            <p>Existen dos razones para esta situación:</p>
 
-            <h2>4. Seguridad y Verificación (Firma HMAC)</h2>
-            <p>Para evitar que terceros envíen falsas bajas, Limen valida la firma del Webhook:</p>
-            <ul>
-                <li>GeoVictoria envía un header <code>X-GV-Signature</code>.</li>
-                <li>Limen recalcula el hash usando el <strong>Webhook Secret</strong> configurado.</li>
-                <li>Si no coinciden, la petición se descarta y se registra como intento de intrusión en el <code>AuditLog</code>.</li>
-            </ul>
-
-            <h2>5. La Lógica de Bloqueo Inmediato (&lt; 30s)</h2>
-            <p>Una vez validado el Webhook, Limen ejecuta el siguiente flujo orquestado:</p>
             <table class="field-table">
                 <thead>
-                    <tr>
-                        <th>Etapa</th>
-                        <th>Acción Técnica</th>
-                        <th>Tiempo Est.</th>
-                    </tr>
+                    <tr><th>Razón</th><th>Detalle</th></tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Mapeo</strong></td>
-                        <td>Busca al usuario por RUT en <code>ApplicationDbContext</code>.</td>
-                        <td>100ms</td>
+                        <td><strong>1. Soporte de GeoVictoria</strong></td>
+                        <td>
+                            La API pública de GeoVictoria (versión utilizada en este conector) no incluye
+                            un mecanismo nativo de webhooks salientes para eventos de baja laboral.
+                            GeoVictoria puede tener esta funcionalidad en planes enterprise o versiones más
+                            recientes — verificar con el ejecutivo de cuenta de GeoVictoria.
+                        </td>
                     </tr>
                     <tr>
-                        <td><strong>Inhabilitación</strong></td>
-                        <td>Marca al usuario como <code>IsActive = false</code> en Limen.</td>
-                        <td>50ms</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Hardware Sync</strong></td>
-                        <td>Envía comando de bloqueo a ZK/Hikvision vía <code>IAccessControlClient</code>.</td>
-                        <td>2-5s</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Revocación Digital</strong></td>
-                        <td>Invalida tokens JWT y Credencial Móvil en <code>Mobile.Api</code>.</td>
-                        <td>500ms</td>
+                        <td><strong>2. Prioridad de desarrollo</strong></td>
+                        <td>
+                            El conector actual cubre el caso de uso principal (sincronización de nómina).
+                            El webhook de tiempo real está en el roadmap pero aún no implementado en Limen.
+                            Si GeoVictoria de tu cliente lo soporta y es prioritario, es un desarrollo
+                            de algunas horas — ver sección "Implementar Webhooks" más abajo.
+                        </td>
                     </tr>
                 </tbody>
             </table>
 
-            <h2>6. Monitoreo y Reintentos</h2>
-            <p>Si el comando de bloqueo al hardware falla (ej: controladora offline), Limen:</p>
+            <!-- ═══════════════════════════════════════════════════════
+                 COMPARATIVA BUK vs GEOVICTORIA
+            ═══════════════════════════════════════════════════════ -->
+            <h2>Comparativa: GeoVictoria vs Buk</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Característica</th><th>GeoVictoria</th><th>Buk</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Autenticación API</strong></td>
+                        <td>ConsumerKey + ConsumerSecret → Bearer Token dinámico (60 min)</td>
+                        <td>auth_token estático en header</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Webhooks de bajas</strong></td>
+                        <td>❌ No disponible en este conector</td>
+                        <td>✅ Bearer Token, evento <code>work_ended</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Latencia en baja laboral</strong></td>
+                        <td>Hasta <strong>15 minutos</strong> (próximo ciclo de polling)</td>
+                        <td><strong>&lt; 30 segundos</strong> (webhook en tiempo real)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Endpoint de nómina</strong></td>
+                        <td><code>POST /api/user/list</code> (devuelve todos, filtro local)</td>
+                        <td><code>GET /api/v1/{country}/employees?status=activo</code> (filtrado en servidor)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Campo identificador</strong></td>
+                        <td><code>identifier</code> (RUT)</td>
+                        <td><code>rut</code> (o <code>document_number</code> como fallback)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fecha de baja</strong></td>
+                        <td>No disponible en la API</td>
+                        <td><code>active_until.date</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cargo del empleado</strong></td>
+                        <td>No disponible en la API</td>
+                        <td><code>current_job.role</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paginación</strong></td>
+                        <td>No (lista completa en una sola respuesta)</td>
+                        <td>Sí (<code>page</code> / <code>page_size</code>, máx 100 por página)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 CÓMO OPERAR SIN WEBHOOKS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>Cómo Operar sin Webhooks</h2>
+            <p>Con GeoVictoria hay una ventana de hasta 15 minutos entre una baja en RRHH y el bloqueo en hardware. Estas son las estrategias para mitigar ese riesgo:</p>
+
+            <h3>Opción A — Bloqueo manual inmediato (recomendado para bajas críticas)</h3>
             <ol>
-                <li>Mueve el evento a una <strong>Dead Letter Queue (DLQ)</strong>.</li>
-                <li>Reintenta cada 60 segundos hasta confirmar el éxito.</li>
-                <li>Alerta al equipo de seguridad mediante un aviso de alta prioridad en el Dashboard: <em>"Baja fallida en Hardware: [Nombre_Usuario]"</em>.</li>
+                <li>En el momento del finiquito, el área de RRHH o Seguridad informa a la guardia</li>
+                <li>El operador de Limen va a <strong>Personas → [nombre del empleado] → Bloquear acceso</strong></li>
+                <li>El bloqueo actúa sobre el hardware (ZK/Hikvision) en 2–5 segundos</li>
+                <li>No requiere esperar el ciclo de polling</li>
             </ol>
 
-            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
-                <strong>Prueba de Integración:</strong> Puede simular este evento usando Postman en el ambiente de Staging. Asegúrese de incluir la firma correcta en los headers para que el middleware de seguridad de Limen permita el paso.
+            <h3>Opción B — Reducir el intervalo de polling</h3>
+            <p>
+                El job de sincronización corre cada 15 minutos por defecto.
+                Si el cliente requiere una ventana menor, el intervalo es configurable por tenant.
+                Reducirlo a 5 minutos es razonable sin impacto de performance para nóminas de hasta
+                5.000 empleados. Contactar al equipo de Limen para ajustarlo.
+            </p>
+
+            <h3>Opción C — Migrar a Buk</h3>
+            <p>
+                Si el cliente usa GeoVictoria solo para asistencia y tiene contratado Buk para
+                liquidaciones, puede configurar <strong>Buk como proveedor de RRHH en Limen</strong>
+                (en lugar de GeoVictoria) y obtener webhooks en tiempo real para bajas laborales.
+                Ambos sistemas son mutuamente excluyentes como proveedor de RRHH en Limen.
+            </p>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 IMPLEMENTAR WEBHOOKS (ROADMAP)
+            ═══════════════════════════════════════════════════════ -->
+            <h2>Implementar Webhooks de GeoVictoria (Roadmap)</h2>
+            <p>
+                Si GeoVictoria del cliente soporta webhooks salientes, el desarrollo en Limen
+                requiere los siguientes pasos. Tiempo estimado: <strong>4–8 horas</strong>.
+            </p>
+
+            <ol style="line-height: 2.2;">
+                <li>
+                    <strong>Confirmar con GeoVictoria</strong> el formato del payload, el mecanismo de
+                    autenticación (¿Bearer Token estático? ¿HMAC-SHA256? ¿IP Whitelist?) y el nombre
+                    exacto del evento de baja (<code>EMPLOYEE_TERMINATED</code>, <code>work_ended</code>, etc.)
+                </li>
+                <li>
+                    <strong>Crear <code>GeoVictoriaWebhookProcessor</code></strong> en
+                    <code>Limen.Infrastructure/HrSystem/</code> siguiendo el mismo patrón que
+                    <code>BukWebhookProcessor</code>: verificación de autenticación, parseo de payload,
+                    despacho a <code>IIdentitySyncService.ProcessTerminationAsync()</code>
+                </li>
+                <li>
+                    <strong>Registrar el endpoint</strong> en <code>Limen.Web/Program.cs</code>:
+                    <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85rem; margin-top: 0.5rem;">
+                        app.MapPost("/api/webhooks/geovictoria", async (...) => { ... });
+                    </div>
+                </li>
+                <li>
+                    <strong>Agregar <code>GeoVictoriaWebhookSecret</code></strong> a <code>GeoVictoriaConfig</code>
+                    en <code>IntegrationConfigs.cs</code> y al formulario de Integraciones en la UI
+                </li>
+                <li>
+                    <strong>Actualizar este tutorial</strong> con el paso a paso de configuración en
+                    el panel de GeoVictoria
+                </li>
+            </ol>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Referencia de implementación:</strong> El webhook de Buk está completamente
+                implementado y es el modelo a seguir. Ver
+                <code>src/Limen.Infrastructure/HrSystem/BukWebhookProcessor.cs</code>
+                y su registro en <code>src/Limen.Web/Program.cs</code>.
             </div>
-
-            <h2>7. Análisis de Logs de una Baja Exitosa</h2>
-            <p>A continuación se presenta la secuencia de logs que debe observar en <strong>Serilog</strong> o la consola de Limen para confirmar que la "Regla de los 30 Segundos" se cumplió satisfactoriamente:</p>
-
-            <div class="example-box" style="background: #0f172a; color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.4;">
-                [14:30:05 INF] [GeoVictoriaWebhook] Received EMPLOYEE_TERMINATED event for RUT: 12345678-9<br>
-                [14:30:05 DBG] [Security] Signature verification SUCCESS for Tenant: CLIENTE_PROD<br>
-                [14:30:05 INF] [IdentityService] User identified: 'Juan Perez' (ID: d4e5f6...). Starting revocation flow.<br>
-                [14:30:05 INF] [Domain] Applying status: IsActive = FALSE for Person: 12345678-9<br>
-                [14:30:06 INF] [HardwareControl] Dispatching BLOCK_USER command to ZK_SERVER_01 (DoorIDs: 1, 2, 3)<br>
-                [14:30:08 INF] [HardwareControl] ZK_SERVER_01 CONFIRMED: User 12345678-9 blocked successfully.<br>
-                [14:30:08 INF] [MobileApi] Revoking JWT Tokens and Mobile Credentials for User: Juan Perez<br>
-                [14:30:09 INF] [Audit] SEC_REVOCATION_COMPLETE: Access fully revoked for 12345678-9 in 4.2 seconds.
-            </div>
-
-            <h3>Interpretación de Estados Críticos</h3>
-            <ul>
-                <li><strong>[Security] Signature verification:</strong> Si aparece como <code>FAILED</code>, verifique que el <em>Shared Secret</em> en Limen coincida con el configurado en GeoVictoria.</li>
-                <li><strong>[HardwareControl] CONFIRMED:</strong> Es el log más importante. Indica que el hardware físico ya tiene la instrucción de bloqueo y la persona no podrá pasar aunque use su tarjeta física.</li>
-                <li><strong>SEC_REVOCATION_COMPLETE:</strong> Este log de auditoría cierra el caso y es el que se utiliza para reportes de cumplimiento legal y KPIs de seguridad.</li>
-            </ul>
         </div>
     </div>
 </body>

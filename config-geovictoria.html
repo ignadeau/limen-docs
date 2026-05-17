@@ -2,51 +2,363 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Limen - Integración GeoVictoria (Polling)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración GeoVictoria (RRHH)</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body class="animate-in">
     <header>
         <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
-        <h1>GEOVICTORIA INTEGRATION</h1>
-        <p>Sincronización de Identidad mediante Polling</p>
+        <h1>GEOVICTORIA</h1>
+        <p>Sincronización de Dotación mediante Polling Periódico</p>
     </header>
 
     <div class="container">
         <div class="main-card">
             <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
-            
+
+            <!-- ═══════════════════════════════════════════════════════
+                 1. ARQUITECTURA DE INTEGRACIÓN
+            ═══════════════════════════════════════════════════════ -->
             <h2>1. Arquitectura de Integración</h2>
-            <p>La integración con GeoVictoria se basa en un modelo de <strong>Polling (Consulta Periódica)</strong>. Limen consulta activamente el estado de los empleados cada cierto tiempo, ya que GeoVictoria no expone Webhooks para eventos de baja en tiempo real en este conector.</p>
+            <p>
+                La integración con GeoVictoria opera mediante <strong>Polling Periódico</strong>:
+                Limen consulta activamente la API de GeoVictoria a intervalos regulares para mantener
+                la nómina sincronizada.
+            </p>
 
-            <h2>2. Proceso de Autenticación</h2>
-            <p>Limen utiliza un flujo de token dinámico para garantizar la seguridad de la comunicación:</p>
-            <ul>
-                <li><strong>Endpoint:</strong> <code>POST /api/v1/Login</code></li>
-                <li><strong>Credenciales:</strong> Requiere <code>ConsumerKey</code> y <code>ConsumerSecret</code> provistos por el equipo de integraciones de GeoVictoria.</li>
-                <li><strong>Gestión de Token:</strong> El Bearer Token obtenido se cachea en Limen durante 50 minutos.</li>
-                <li><strong>Failsafe:</strong> El sistema implementa <em>Auto-retry</em> automático en caso de recibir un error 401 (Unauthorized).</li>
-            </ul>
-
-            <h2>3. Sincronización de Empleados</h2>
-            <p>Para obtener la nómina vigente, Limen ejecuta:</p>
-            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
-                POST /api/user/list<br>
-                Payload: { "status": 1 } // Filtra solo empleados activos
-            </div>
-
-            <h2>4. Configuración por Tenant</h2>
-            <p>En el panel de Administración de Limen, debe configurar los siguientes campos obligatorios:</p>
             <table class="field-table">
-                <tr><th>Campo</th><th>Descripción</th></tr>
-                <tr><td><strong>BaseUrl</strong></td><td>URL base de la API de GeoVictoria para su instancia.</td></tr>
-                <tr><td><strong>ConsumerKey</strong></td><td>Llave de acceso de la aplicación.</td></tr>
-                <tr><td><strong>ConsumerSecret</strong></td><td>Secreto de la aplicación (se guarda cifrado).</td></tr>
+                <thead>
+                    <tr><th>Mecanismo</th><th>Cuándo actúa</th><th>Latencia</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Polling periódico</strong></td>
+                        <td>Sincronización completa de nómina activa (job cada 15 min)</td>
+                        <td>≤ 15 min</td>
+                    </tr>
+                </tbody>
             </table>
 
             <div class="example-box pulse-gold">
-                <strong>Nota Importante:</strong> Al no contar con Webhooks, el bloqueo de bajas laborales depende de la frecuencia del job de sincronización. Para bloqueos manuales inmediatos, utilice el botón de "Bloqueo" en el perfil del usuario en Limen.
+                ⚠️ <strong>Diferencia clave con Buk:</strong> GeoVictoria <strong>no soporta webhooks</strong>
+                en este conector. Limen no puede recibir notificaciones instantáneas de bajas laborales.
+                El bloqueo de acceso ocurre en el próximo ciclo de polling (máximo 15 minutos).
+                Para bajas urgentes use el <strong>bloqueo manual inmediato</strong> desde
+                <strong>Personas → [empleado] → Bloquear acceso</strong>.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 2. MODELO DE AUTENTICACIÓN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>2. Modelo de Autenticación</h2>
+            <p>
+                GeoVictoria usa un flujo de <strong>token dinámico</strong>: Limen se autentica
+                con ConsumerKey + ConsumerSecret y obtiene un Bearer Token con duración de 60 minutos.
+            </p>
+
+            <h3>Flujo de autenticación</h3>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+                POST https://[instancia].geovictoria.com/api/v1/Login<br>
+                Content-Type: application/json<br><br>
+                {<br>
+                &nbsp;&nbsp;"ConsumerKey": "{tu_consumer_key}",<br>
+                &nbsp;&nbsp;"ConsumerSecret": "{tu_consumer_secret}"<br>
+                }<br><br>
+                <span style="color: #10b981;">// Respuesta:</span><br>
+                {<br>
+                &nbsp;&nbsp;"token": "eyJhbGciOiJIUzI1NiJ9...",<br>
+                &nbsp;&nbsp;"expiration": "2026-05-17T15:30:00Z"<br>
+                }
+            </div>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Comportamiento</th><th>Detalle</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cache del token</strong></td>
+                        <td>Limen cachea el token por <strong>50 minutos</strong> (conservador respecto al TTL de 60 min de GeoVictoria) para evitar logins innecesarios en cada ciclo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Auto-retry en 401</strong></td>
+                        <td>Si GeoVictoria responde 401 (token expirado antes de tiempo), Limen limpia el cache, obtiene un token nuevo y reintenta la consulta automáticamente — sin intervención manual</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alcance por tenant</strong></td>
+                        <td>La clave de cache incluye el ConsumerKey para evitar colisiones entre tenants que compartan el mismo servidor Limen</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 3. OBTENER CREDENCIALES EN GEOVICTORIA
+            ═══════════════════════════════════════════════════════ -->
+            <h2>3. Obtener Credenciales en GeoVictoria</h2>
+            <p>
+                El ConsumerKey y ConsumerSecret son credenciales de integración de aplicación,
+                distintas al usuario/contraseña de acceso al portal.
+            </p>
+            <ol>
+                <li>Ingresar al panel de GeoVictoria como administrador</li>
+                <li>Ir a <strong>Configuración → Integraciones → API / Aplicaciones externas</strong></li>
+                <li>Crear una nueva aplicación con nombre descriptivo: <em>"Limen - Control de Acceso"</em></li>
+                <li>El sistema generará el <strong>ConsumerKey</strong> y el <strong>ConsumerSecret</strong></li>
+                <li>Copiar ambos valores — el ConsumerSecret generalmente no se vuelve a mostrar</li>
+            </ol>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Si no aparece la sección de API:</strong> Esta funcionalidad puede requerir
+                habilitación por parte del equipo de GeoVictoria. Contactar al soporte de GeoVictoria
+                indicando que necesitas acceso a la API REST de usuarios.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 4. CONFIGURAR EN LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>4. Configurar la Integración en Limen</h2>
+            <ol>
+                <li>Ingresar a Limen como <strong>TenantAdmin</strong></li>
+                <li>Ir a <strong>Administración → Integraciones → RRHH → GeoVictoria</strong></li>
+                <li>Completar los campos:</li>
+            </ol>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>URL Base</strong></td>
+                        <td>URL raíz de la instancia GeoVictoria del cliente, sin barra final</td>
+                        <td><code>https://miempresa.geovictoria.com</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consumer Key</strong></td>
+                        <td>Llave de la aplicación generada en el paso 3</td>
+                        <td><code>gv_ck_aBcDe...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consumer Secret</strong></td>
+                        <td>Secret de la aplicación. Se cifra con DataProtection antes de guardarse.</td>
+                        <td><code>gv_cs_XyZw...</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <ol start="4">
+                <li>Hacer clic en <strong>Guardar</strong></li>
+                <li>Hacer clic en <strong>Probar Conexión</strong>. Debe mostrar: <em>"Conexión exitosa. N empleados activos."</em></li>
+            </ol>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Seguridad:</strong> El ConsumerSecret se cifra con AES-256 (DataProtection)
+                antes de almacenarse en la base de datos. No se guarda en texto plano ni en appsettings.
+                Una vez guardado, el campo queda en blanco en el formulario — eso es normal.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 5. ENDPOINTS DE LA API (REFERENCIA TÉCNICA)
+            ═══════════════════════════════════════════════════════ -->
+            <h2>5. Endpoints de la API GeoVictoria (Referencia Técnica)</h2>
+            <p>Limen usa los siguientes endpoints de GeoVictoria (verificados mayo 2026):</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Endpoint / Uso en Limen</th><th>Descripción</th><th>Payload</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <code>POST /api/v1/Login</code><br>
+                            <small style="color:#64748b;">→ Autenticación interna</small>
+                        </td>
+                        <td>Obtiene el Bearer Token de sesión. Se llama automáticamente cuando el token no está en cache o expiró.</td>
+                        <td><code>{"ConsumerKey": "...", "ConsumerSecret": "..."}</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>POST /api/user/list</code><br>
+                            <small style="color:#64748b;">→ <code>GetActiveEmployeesAsync()</code></small><br>
+                            <small style="color:#64748b;">→ <code>GetTerminatedEmployeesAsync()</code></small><br>
+                            <small style="color:#64748b;">→ <code>GetEmployeeByRutAsync(rut)</code></small><br>
+                            <small style="color:#64748b;">→ <code>TestConnectionAsync()</code></small>
+                        </td>
+                        <td>
+                            Retorna <strong>todos</strong> los usuarios de la cuenta GeoVictoria.
+                            Limen filtra localmente por <code>status</code>:
+                            <ul style="margin: 0.5rem 0 0; padding-left: 1.2rem;">
+                                <li><code>status == 1</code> → activos</li>
+                                <li><code>status != 1</code> → desvinculados</li>
+                            </ul>
+                        </td>
+                        <td><code>{}</code> (payload vacío)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Nota:</strong> GeoVictoria no expone endpoints separados para empleados activos
+                o inactivos. La API devuelve la lista completa y Limen aplica el filtro en memoria.
+                Para búsqueda por RUT (<code>GetEmployeeByRutAsync</code>), Limen descarga toda la nómina
+                activa y filtra localmente — esto es una limitación de la API de GeoVictoria.
+            </div>
+
+            <h3>Campos del objeto usuario retornado por GeoVictoria</h3>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo JSON</th><th>Tipo</th><th>Descripción</th><th>Usado por Limen</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>identifier</code></td><td>string</td><td>RUT chileno del empleado</td><td>✅ Identificador principal (Rut)</td></tr>
+                    <tr><td><code>name</code></td><td>string</td><td>Nombre completo</td><td>✅ FullName</td></tr>
+                    <tr><td><code>email</code></td><td>string|null</td><td>Correo corporativo</td><td>✅ Email</td></tr>
+                    <tr><td><code>company</code></td><td>string|null</td><td>Empresa o sucursal a la que pertenece</td><td>✅ Department (GeoVictoria no expone departamento directo)</td></tr>
+                    <tr><td><code>groups</code></td><td>string[]|null</td><td>Grupos de acceso asignados en GeoVictoria</td><td>No (disponible para uso futuro)</td></tr>
+                    <tr><td><code>status</code></td><td>integer</td><td><code>1</code> = activo, <code>0</code> = inactivo</td><td>✅ IsActive</td></tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Limitación de datos:</strong> GeoVictoria no expone fecha de desvinculación
+                (<code>TerminationDate</code>) ni cargo (<code>Position</code>) en este endpoint.
+                Ambos campos quedan en <code>null</code> en el modelo de Limen al sincronizar
+                desde GeoVictoria.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 6. FLUJO DE SINCRONIZACIÓN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>6. Flujo de Sincronización Periódica</h2>
+            <p>El job de sincronización (<code>IdentitySyncJob</code>) corre cada <strong>15 minutos</strong> y ejecuta:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Etapa</th><th>Acción</th><th>Tiempo est.</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Token</strong></td>
+                        <td>Obtener Bearer Token desde cache o autenticar contra GeoVictoria</td>
+                        <td>0–500ms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Nómina</strong></td>
+                        <td><code>POST /api/user/list</code> → lista completa de usuarios</td>
+                        <td>1–5s (depende del tamaño)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Diff</strong></td>
+                        <td>Comparar nómina GeoVictoria con <code>EmployeeRecord</code> en Limen: detectar altas, bajas y cambios</td>
+                        <td>~200ms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Bajas</strong></td>
+                        <td>Para empleados que pasaron de activo a inactivo → bloqueo en hardware (ZK/Hikvision) vía <code>IAccessControlPlatformClient</code></td>
+                        <td>2–5s por empleado</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Auditoría</strong></td>
+                        <td>Registro de cada cambio en <code>AuditLog</code></td>
+                        <td>~50ms</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fef2f2; border-left-color: #dc2626;">
+                <strong>Baja urgente — no esperes el próximo ciclo:</strong> Si un empleado es
+                desvinculado y necesitas bloquear su acceso de inmediato, usa el bloqueo manual:
+                <strong>Personas → [nombre del empleado] → Bloquear acceso</strong>. Esto actúa
+                directamente sobre el hardware sin esperar el ciclo de 15 minutos.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 7. VERIFICAR LA INTEGRACIÓN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>7. Verificar la Integración</h2>
+
+            <h3>7.1 Verificar conexión desde la UI</h3>
+            <ol>
+                <li>Ir a <strong>Administración → Integraciones → RRHH → GeoVictoria</strong></li>
+                <li>Hacer clic en <strong>Probar Conexión</strong></li>
+                <li>El resultado debe mostrar el número de empleados activos. Si aparece un error, revisar la sección Troubleshooting</li>
+            </ol>
+
+            <h3>7.2 Verificar autenticación manualmente con curl</h3>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85rem;">
+                # Paso 1: Obtener token<br>
+                curl -X POST https://[instancia].geovictoria.com/api/v1/Login \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{"ConsumerKey":"TU_KEY","ConsumerSecret":"TU_SECRET"}'<br><br>
+                # Paso 2: Consultar usuarios con el token obtenido<br>
+                curl -X POST https://[instancia].geovictoria.com/api/user/list \<br>
+                &nbsp;&nbsp;-H "Authorization: Bearer {TOKEN_DEL_PASO_1}" \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{}'
+            </div>
+            <p style="margin-top: 0.75rem;">
+                La respuesta del paso 2 debe ser un array JSON de usuarios.
+                Si recibes <code>401</code> en el paso 1, las credenciales son incorrectas.
+                Si recibes <code>401</code> en el paso 2, el token del paso 1 no fue copiado correctamente.
+            </p>
+
+            <h3>7.3 Verificar en AuditLog de Limen</h3>
+            <ol>
+                <li>Ir a <strong>Administración → Auditoría</strong></li>
+                <li>Buscar eventos con tipo <code>GV_SYNC_COMPLETED</code> para ver el historial de sincronizaciones</li>
+                <li>Si hay errores, buscar <code>GV_SYNC_ERROR</code> con el detalle del problema</li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 8. TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════ -->
+            <h2>8. Troubleshooting</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>"Probar Conexión" devuelve error 401</td>
+                        <td>ConsumerKey o ConsumerSecret incorrectos</td>
+                        <td>Regenerar las credenciales en GeoVictoria y actualizar en Limen</td>
+                    </tr>
+                    <tr>
+                        <td>"Probar Conexión" devuelve error de conexión / timeout</td>
+                        <td>La URL Base apunta a un servidor incorrecto o hay un firewall bloqueando</td>
+                        <td>Verificar que la URL no tenga barra final ni rutas adicionales. Probar con curl desde el servidor de Limen</td>
+                    </tr>
+                    <tr>
+                        <td>La nómina se sincroniza pero los empleados no aparecen en Limen</td>
+                        <td>El campo <code>identifier</code> (RUT) viene vacío o con formato incorrecto desde GeoVictoria</td>
+                        <td>Revisar en GeoVictoria que los empleados tienen RUT cargado. El campo <code>identifier</code> es el identificador principal</td>
+                    </tr>
+                    <tr>
+                        <td>Un empleado desvinculado sigue con acceso después de 15 minutos</td>
+                        <td>El campo <code>status</code> del empleado no cambió a <code>0</code> en GeoVictoria, o el job falló silenciosamente</td>
+                        <td>Verificar el status del empleado en GeoVictoria. Revisar logs de <code>IdentitySyncJob</code> en Serilog. Usar bloqueo manual si es urgente</td>
+                    </tr>
+                    <tr>
+                        <td>El job deja de sincronizar después de un tiempo</td>
+                        <td>Token expirado y auto-retry fallando (GeoVictoria no disponible temporalmente)</td>
+                        <td>Limen reintentará automáticamente en el próximo ciclo. Si persiste, verificar que GeoVictoria está en línea y que las credenciales siguen válidas</td>
+                    </tr>
+                    <tr>
+                        <td>Credenciales no se pueden descifrar</td>
+                        <td>La clave DataProtection cambió (nuevo servidor o deployment limpio)</td>
+                        <td>Ir a Integraciones y volver a guardar el ConsumerSecret con la clave actual</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 2rem;">
+                <a href="config-geovictoria-webhooks.html" class="menu-item hover-lift">
+                    <h3>→ Limitaciones y Diferencias con Buk</h3>
+                    <p>Por qué GeoVictoria no soporta webhooks en tiempo real y cómo operar con esa restricción.</p>
+                </a>
             </div>
         </div>
     </div>
