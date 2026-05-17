@@ -2,34 +2,64 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Configuración - ZKTEco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración ZKBio CVSecurity</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
+<body class="animate-in">
     <header>
-        <h1>ZKTEco Integration</h1>
-        <p>Control de Acceso Físico y Gestión de Patentes</p>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>ZKBIO CVSECURITY</h1>
+        <p>Control de Acceso Físico — Guía de Integración</p>
     </header>
+
     <div class="container">
-        <div class="main-card">
+        <div class="main-card hover-lift">
             <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
-            
-            <h2>1. Endpoints Utilizados</h2>
+
+            <h2>Modelo de Autenticación</h2>
+            <p>
+                ZKBio CVSecurity autentica mediante una <strong>API Key estática</strong> que se genera una sola vez
+                en el panel de administración del servidor ZK. Esta key <strong>no expira</strong> a menos que se
+                regenere manualmente, y se envía como query parameter en cada llamada:
+            </p>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
+                GET /api/door/list?pageNo=1&amp;pageSize=500<strong>&amp;access_token=TU_API_KEY</strong>
+            </div>
+            <div class="example-box pulse-gold" style="margin-top:1rem;">
+                ⚠️ <strong>Importante:</strong> A diferencia de otros sistemas, ZKBio NO usa usuario + contraseña
+                para la API REST. Usar credenciales de usuario en este campo producirá errores 404 o respuestas HTML
+                en lugar de JSON.
+            </div>
+
+            <h2>Endpoints Utilizados por Limen</h2>
             <table class="field-table">
-                <tr><th>Recurso</th><th>Endpoint ZK</th><th>Descripción</th></tr>
-                <tr><td><strong>Personas</strong></td><td>/api/person/add</td><td>Sincroniza identidad y biometría.</td></tr>
-                <tr><td><strong>Patentes</strong></td><td>/api/vehicle/add</td><td>Registra vehículos autorizados.</td></tr>
-                <tr><td><strong>Comandos</strong></td><td>/api/access/remoteOpen</td><td>Apertura remota desde Limen.</td></tr>
+                <tr><th>Operación</th><th>Endpoint ZKBio</th><th>Descripción</th></tr>
+                <tr><td><strong>Listar puertas</strong></td><td><code>/api/door/list</code></td><td>Obtiene las puertas configuradas en el hardware.</td></tr>
+                <tr><td><strong>Eventos de acceso</strong></td><td><code>/api/transaction/monitor</code></td><td>Monitoreo de eventos en tiempo real (timestamp Unix ms).</td></tr>
+                <tr><td><strong>Sincronizar persona</strong></td><td><code>/api/person/add</code></td><td>Alta/actualización de identidad y biometría.</td></tr>
+                <tr><td><strong>Bloquear persona</strong></td><td><code>/api/person/add</code></td><td>Con <code>isDisabled: true</code> para revocar acceso.</td></tr>
+                <tr><td><strong>Apertura remota puerta</strong></td><td><code>/api/door/remoteOpenById</code></td><td>Abre una puerta desde Limen.</td></tr>
+                <tr><td><strong>Apertura remota torniquete</strong></td><td><code>/api/psgGate/remoteOpenById</code></td><td>Abre un molinete/torniquete desde Limen.</td></tr>
+                <tr><td><strong>Asignar perfil de acceso</strong></td><td><code>/api/accLevel/addLevelPerson</code></td><td>Vincula una persona a un nivel de acceso.</td></tr>
             </table>
 
-            <h2>2. Mapeo de Puertas</h2>
-            <p>El <code>HardwareID</code> en la configuración de puertas de Limen debe coincidir exactamente con el <code>DoorID</code> reportado por el servidor ZK BioSecurity.</p>
-
-            <h2>3. Troubleshooting</h2>
-            <ul>
-                <li><strong>Error 401:</strong> Credenciales de API incorrectas o sesión expirada.</li>
-                <li><strong>Error 504:</strong> Servidor ZK fuera de línea o firewall bloqueando el puerto.</li>
-            </ul>
+            <h2>Páginas de Configuración Disponibles</h2>
+            <div style="display: grid; gap: 1rem; margin-top: 1rem;">
+                <a href="config-zkteco-master.html" class="menu-item hover-lift">
+                    <h3>→ Paso a Paso: Generar API Key en ZKBio</h3>
+                    <p>Cómo crear el token en el servidor ZKBio CVSecurity y configurarlo en Limen.</p>
+                </a>
+                <a href="config-zkteco-detail.html" class="menu-item hover-lift">
+                    <h3>→ Mapeo de Puertas y Troubleshooting</h3>
+                    <p>Cómo importar puertas desde el hardware y resolver problemas de conexión.</p>
+                </a>
+                <a href="config-zkteco-schedules.html" class="menu-item hover-lift">
+                    <h3>→ Horarios y Niveles de Acceso</h3>
+                    <p>Mapeo de AccessProfiles de Limen con los niveles de acceso de ZKBio.</p>
+                </a>
+            </div>
         </div>
     </div>
 </body>

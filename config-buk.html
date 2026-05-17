@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Limen - Integración Buk (Real-Time)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración Buk (RRHH)</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -10,48 +11,495 @@
     <header>
         <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
         <h1>BUK INTEGRATION</h1>
-        <p>Sincronización en Tiempo Real mediante Webhooks</p>
+        <p>Sincronización en Tiempo Real — Bajas Laborales en menos de 30 segundos</p>
     </header>
 
     <div class="container">
         <div class="main-card">
             <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
-            
+
+            <!-- ═══════════════════════════════════════════════════════
+                 1. ARQUITECTURA DE INTEGRACIÓN
+            ═══════════════════════════════════════════════════════ -->
             <h2>1. Arquitectura de Integración</h2>
-            <p>La integración con Buk es de alta prioridad y utiliza <strong>Webhooks en tiempo real</strong>. Esto permite que el sistema reaccione instantáneamente ante bajas laborales.</p>
-
-            <h2>2. Proceso de Autenticación</h2>
-            <p>Limen utiliza autenticación simple y segura para las peticiones salientes:</p>
-            <ul>
-                <li><strong>Header Obligatorio:</strong> <code>auth_token: {ApiKey}</code> en cada request.</li>
-                <li><strong>Endpoint de Nómina:</strong> <code>GET /employees/active</code> (descarga inicial de empleados).</li>
-            </ul>
-
-            <h2>3. Webhooks de Baja (Real-Time Bloqueo)</h2>
-            <p>Buk envía una notificación a Limen cuando un contrato finaliza. Para configurar esto, debe ingresar la siguiente URL en el panel de Webhooks de Buk:</p>
-            <div class="example-box">
-                <code>https://api.limen.app/api/webhooks/buk</code><br>
-                <small>Nota: Se debe incluir el header <code>X-Tenant-Id</code> con el ID de su empresa en Limen.</small>
-            </div>
-
-            <h3>Seguridad HMAC-SHA256</h3>
-            <p>Limen protege el endpoint de webhooks verificando la autenticidad de Buk:</p>
-            <ul>
-                <li><strong>Header de Firma:</strong> <code>X-Buk-Signature</code>.</li>
-                <li><strong>Validación:</strong> Limen realiza una comparación de tiempo constante (Constant-time comparison) para evitar ataques de temporización.</li>
-                <li><strong>Acción:</strong> Ante un evento válido de baja, se dispara el proceso <code>ProcessTerminationAsync</code>, bloqueando el acceso en el hardware en menos de 30 segundos.</li>
-            </ul>
-
-            <h2>4. Configuración en Limen</h2>
+            <p>
+                La integración con Buk combina dos mecanismos complementarios para garantizar
+                sincronización completa y reacción inmediata ante bajas laborales:
+            </p>
             <table class="field-table">
-                <tr><th>Campo</th><th>Descripción</th></tr>
-                <tr><td><strong>Tenant Name</strong></td><td>Subdominio de su cuenta Buk (ej: <code>miempresa</code>).</td></tr>
-                <tr><td><strong>API Key</strong></td><td>Token <code>auth_token</code> generado en el panel Buk.</td></tr>
-                <tr><td><strong>Webhook Secret</strong></td><td>Clave secreta para validar las firmas HMAC de los webhooks.</td></tr>
+                <thead>
+                    <tr><th>Mecanismo</th><th>Cuándo actúa</th><th>Latencia</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Polling periódico</strong></td>
+                        <td>Sincronización completa de nómina activa (job cada 15 min)</td>
+                        <td>≤ 15 min</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Webhooks en tiempo real</strong></td>
+                        <td>Evento de baja laboral, alta o actualización de datos</td>
+                        <td><strong>&lt; 30 seg</strong></td>
+                    </tr>
+                </tbody>
             </table>
 
             <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
-                <strong>Ventaja Buk:</strong> Al ser un sistema <em>Event-Driven</em>, la seguridad de su planta aumenta drásticamente al eliminar el tiempo de espera entre el finiquito y el bloqueo físico.
+                <strong>Ventaja frente a GeoVictoria:</strong> Buk notifica activamente a Limen cuando
+                ocurre una baja. No hay que esperar el próximo ciclo de polling — el bloqueo físico
+                en los torniquetes se ejecuta en segundos desde el finiquito.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 2. OBTENER CREDENCIALES EN BUK
+            ═══════════════════════════════════════════════════════ -->
+            <h2>2. Obtener Credenciales en el Panel de Buk</h2>
+
+            <h3>2.1 API Key (auth_token)</h3>
+            <p>El API Key es el token de autenticación para las consultas salientes de Limen hacia Buk.</p>
+            <ol>
+                <li>Ingresar al panel de Buk como administrador: <code>https://[su-empresa].buk.cl</code></li>
+                <li>Ir a <strong>Configuración → Integraciones → Acceso a la API</strong></li>
+                <li>Hacer clic en <strong>Generar nuevo token</strong></li>
+                <li>
+                    Asignar un nombre descriptivo: <em>"Limen - Control de Acceso"</em>
+                </li>
+                <li>
+                    Seleccionar el scope mínimo necesario:
+                    <ul>
+                        <li><code>employees:read</code> — lectura de nómina</li>
+                    </ul>
+                </li>
+                <li>Copiar el token generado. <strong>Solo se muestra una vez.</strong></li>
+            </ol>
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Buenas prácticas de seguridad:</strong> Generar un token con scope limitado
+                exclusivamente a lectura de empleados. No reutilizar el token de otras integraciones.
+                Si el token se expone accidentalmente, revocarlo desde el mismo panel.
+            </div>
+
+            <h3>2.2 Webhook Secret (Bearer Token para webhooks entrantes)</h3>
+            <p>
+                Buk autentica sus webhooks salientes usando un <strong>Bearer Token estático</strong>
+                que usted configura. Limen verifica este token en cada webhook recibido para garantizar
+                que proviene de Buk y no de un tercero.
+            </p>
+            <ol>
+                <li>
+                    Generar un token secreto seguro. Puede usar:
+                    <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
+                        # PowerShell:<br>
+                        [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))<br><br>
+                        # Linux/Mac:<br>
+                        openssl rand -base64 32
+                    </div>
+                </li>
+                <li>Guardar este valor — lo necesitará tanto en Limen como en el panel de Buk.</li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 3. CONFIGURAR EN LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>3. Configurar la Integración en Limen</h2>
+            <ol>
+                <li>Ingresar a Limen como <strong>TenantAdmin</strong>.</li>
+                <li>Ir a <strong>Administración → Integraciones → RRHH → Buk</strong>.</li>
+                <li>Completar los campos:</li>
+            </ol>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo</th><th>Valor</th><th>Ejemplo</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Tenant Name</strong></td>
+                        <td>Subdominio de su cuenta Buk (sin .buk.cl)</td>
+                        <td><code>miempresa</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>API Key</strong></td>
+                        <td>Token <code>auth_token</code> generado en el paso 2.1</td>
+                        <td><code>eyJhbGciOi...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Webhook Secret</strong></td>
+                        <td>Bearer Token secreto generado en el paso 2.2</td>
+                        <td><code>aB3dE5fG7h...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>País</strong></td>
+                        <td>País de la instancia Buk (afecta la URL del endpoint)</td>
+                        <td><code>chile</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <ol start="4">
+                <li>Hacer clic en <strong>Guardar</strong>.</li>
+                <li>Hacer clic en <strong>Probar Conexión</strong>. Debe mostrar: <em>"Conexión exitosa. N empleados activos."</em></li>
+            </ol>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Seguridad:</strong> Las credenciales se cifran con AES-256 (DataProtection) antes de
+                almacenarse en la base de datos. No se guardan en texto plano ni en appsettings.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 4. CONFIGURAR WEBHOOKS EN BUK
+            ═══════════════════════════════════════════════════════ -->
+            <h2>4. Configurar Webhooks en el Panel de Buk</h2>
+            <p>
+                Este paso configura a Buk para que notifique a Limen cada vez que ocurra un evento
+                laboral relevante (baja, alta, actualización de datos).
+            </p>
+
+            <h3>4.1 Acceder a la configuración de webhooks</h3>
+            <ol>
+                <li>En el panel de Buk, ir a <strong>Configuración → Integraciones → Webhooks</strong></li>
+                <li>Hacer clic en <strong>Nuevo Webhook</strong></li>
+            </ol>
+
+            <h3>4.2 Configurar la URL de destino</h3>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo</th><th>Valor</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>URL del Webhook</strong></td>
+                        <td><code>https://api.limen.app/api/webhooks/buk</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Método HTTP</strong></td>
+                        <td><code>POST</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Formato del Payload</strong></td>
+                        <td><code>application/json</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.3 Configurar la autenticación Bearer Token</h3>
+            <p>En la sección de <strong>Autenticación</strong> del webhook:</p>
+            <ol>
+                <li>Seleccionar tipo: <strong>Bearer Token</strong></li>
+                <li>Ingresar el mismo valor del <strong>Webhook Secret</strong> configurado en Limen (paso 3)</li>
+                <li>Buk enviará automáticamente <code>Authorization: Bearer {token}</code> en cada request</li>
+            </ol>
+
+            <h3>4.4 Configurar el header X-Tenant-Id (obligatorio)</h3>
+            <p>
+                Limen es multi-tenant. Para identificar a qué empresa corresponde el webhook,
+                debe agregar el Tenant ID como header adicional en la configuración de Buk:
+            </p>
+            <ol>
+                <li>En la sección <strong>Headers adicionales</strong> del webhook, agregar:</li>
+            </ol>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Nombre del Header</th><th>Valor</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>X-Tenant-Id</code></td>
+                        <td>
+                            El GUID de su tenant en Limen.<br>
+                            <small>Ejemplo: <code>3fa85f64-5717-4562-b3fc-2c963f66afa6</code></small><br>
+                            <small>Puede obtenerlo en Limen: <strong>Administración → Tenant → Información General → ID</strong></small>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.5 Suscribirse a los eventos relevantes</h3>
+            <p>Activar la suscripción a los siguientes tipos de eventos en Buk:</p>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Evento Buk</th><th>Acción en Limen</th><th>Prioridad</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <code>work_ended</code><br>
+                            <code>worked_ended</code><br>
+                            <code>work_finished</code><br>
+                            <code>employee_terminated</code>
+                        </td>
+                        <td>Bloqueo inmediato de acceso físico en hardware (todos son alias del mismo evento de baja)</td>
+                        <td><strong>CRÍTICO</strong></td>
+                    </tr>
+                    <tr>
+                        <td><code>employee_created</code> / <code>work_started</code></td>
+                        <td>Registro en AuditLog — el alta de acceso la gestiona el job de sincronización periódica</td>
+                        <td>Normal</td>
+                    </tr>
+                    <tr>
+                        <td><code>employee_updated</code> / <code>work_updated</code></td>
+                        <td>Registro en AuditLog — los cambios de datos los aplica el job de sincronización periódica</td>
+                        <td>Normal</td>
+                    </tr>
+                    <tr>
+                        <td>Cualquier otro evento desconocido</td>
+                        <td>Registro en AuditLog como <code>BUK_EVENT_UNKNOWN</code> — Limen responde 200 para evitar reintentos de Buk</td>
+                        <td>Informativo</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>¿Por qué hay múltiples alias para la baja?</strong> Buk ha cambiado el nombre del evento
+                de finiquito entre versiones de su API. Limen maneja todos los alias conocidos para garantizar
+                compatibilidad independiente de la versión de Buk que use el cliente.
+            </div>
+
+            <ol start="3">
+                <li>Hacer clic en <strong>Guardar</strong> en el panel de Buk.</li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 5. FLUJO DE UNA BAJA LABORAL
+            ═══════════════════════════════════════════════════════ -->
+            <h2>5. Flujo de una Baja Laboral (objetivo: &lt; 30 segundos)</h2>
+            <p>Cuando un colaborador es finiquitado en Buk, ocurre la siguiente secuencia automática:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Etapa</th><th>Acción Técnica</th><th>Tiempo Est.</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Evento Buk</strong></td>
+                        <td>Buk ejecuta el proceso de baja y dispara el webhook <code>work_ended</code> con el RUT del empleado</td>
+                        <td>0s</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Recepción</strong></td>
+                        <td>Limen recibe el webhook en <code>POST /api/webhooks/buk</code></td>
+                        <td>&lt; 1s</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Autenticación</strong></td>
+                        <td>Verificación del Bearer Token con comparación de tiempo constante</td>
+                        <td>&lt; 10ms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Mapeo</strong></td>
+                        <td>Búsqueda del empleado por RUT en la BD de Limen</td>
+                        <td>~100ms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Inhabilitación</strong></td>
+                        <td>Marca <code>EmployeeRecord.Status = Terminated</code> en la BD</td>
+                        <td>~50ms</td>
+                    </tr>
+                    <tr>
+                        <td><strong>6. Bloqueo Hardware</strong></td>
+                        <td>Envío de comando BLOCK_USER al hardware (ZK/Hikvision) vía <code>IAccessControlPlatformClient</code></td>
+                        <td>2–5s</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7. Auditoría</strong></td>
+                        <td>Registro de <code>SEC_REVOCATION_COMPLETE</code> en <code>AuditLog</code></td>
+                        <td>&lt; 50ms</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Logs esperados en Serilog para una baja exitosa</h3>
+            <div class="example-box" style="background: #0f172a; color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5;">
+                [14:30:05 INF] [BukWebhook] Tenant 3fa8...: evento 'work_ended', RUT '12345678-9'.<br>
+                [14:30:05 INF] [BukWebhook] Tenant 3fa8...: iniciando flujo de baja para RUT '12345678-9'.<br>
+                [14:30:05 INF] Procesando baja para tenant 3fa8..., empleado externo 12345678-9<br>
+                [14:30:06 INF] Accesos revocados para empleado Juan Pérez (12345678-9).<br>
+                [14:30:07 INF] [BukWebhook] Tenant 3fa8...: baja completada para RUT '12345678-9'.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 6. ENDPOINT DEL API DE BUK (referencia técnica)
+            ═══════════════════════════════════════════════════════ -->
+            <h2>6. Endpoints de la API Buk (Referencia Técnica)</h2>
+            <p>
+                Limen consulta la API de Buk para la sincronización periódica de la nómina.
+                A continuación los endpoints reales utilizados (verificados mayo 2026):
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Endpoint / Uso en Limen</th><th>Descripción</th><th>Parámetros clave</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <code>GET /api/v1/{country}/employees</code><br>
+                            <small style="color:#64748b;">→ <code>GetActiveEmployeesAsync()</code></small>
+                        </td>
+                        <td>Nómina activa completa (paginada). Limen usa <code>page_size=100</code> y pagina automáticamente hasta agotar resultados.</td>
+                        <td><code>status=activo</code>, <code>page</code>, <code>page_size</code> (max 100)</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>GET /api/v1/{country}/employees</code><br>
+                            <small style="color:#64748b;">→ <code>GetTerminatedEmployeesAsync()</code></small>
+                        </td>
+                        <td>Empleados desvinculados. Mismo endpoint, distinto filtro de status.</td>
+                        <td><code>status=inactivo</code>, <code>page</code>, <code>page_size</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>GET /api/v1/{country}/employees</code><br>
+                            <small style="color:#64748b;">→ <code>GetEmployeeByRutAsync(rut)</code></small>
+                        </td>
+                        <td>Búsqueda individual por RUT. Limen normaliza el RUT antes de enviarlo (sin puntos ni guión).</td>
+                        <td><code>document_number={rut_sin_puntos}</code>, <code>status=activo</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>GET /api/v1/{country}/employees</code><br>
+                            <small style="color:#64748b;">→ <code>TestConnectionAsync()</code></small>
+                        </td>
+                        <td>Prueba de conexión: trae 1 página y devuelve el total de empleados activos.</td>
+                        <td><code>status=activo&amp;page_size=25&amp;page=1</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Nota:</strong> Limen usa siempre el mismo endpoint <code>/employees</code> variando el
+                parámetro <code>status</code>. Buk no expone endpoints separados por tipo de empleado
+                (no hay <code>/employees/inactive</code> ni <code>/employees/terminated</code>).
+            </div>
+
+            <h3>Autenticación</h3>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace;">
+                GET https://[tenant].buk.cl/api/v1/chile/employees?status=activo&amp;page_size=100&amp;page=1<br>
+                <br>
+                Headers:<br>
+                &nbsp;&nbsp;auth_token: {ApiKey}<br>
+                &nbsp;&nbsp;Accept: application/json
+            </div>
+
+            <h3>Campos reales del objeto Employee (verificados)</h3>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo JSON</th><th>Tipo</th><th>Descripción</th><th>Usado por Limen</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>id</code></td><td>integer</td><td>ID interno de Buk</td><td>No (solo referencia)</td></tr>
+                    <tr><td><code>rut</code></td><td>string</td><td>RUT chileno (ej: "12345678-9")</td><td>✅ Identificador principal</td></tr>
+                    <tr><td><code>document_number</code></td><td>string|null</td><td>Número de documento para países fuera de Chile</td><td>✅ Fallback si no hay rut</td></tr>
+                    <tr><td><code>full_name</code></td><td>string</td><td>Nombre completo ya formateado por Buk</td><td>✅</td></tr>
+                    <tr><td><code>first_name</code></td><td>string|null</td><td>Nombre(s) sin apellido</td><td>No (se usa full_name)</td></tr>
+                    <tr><td><code>surname</code></td><td>string|null</td><td>Apellido(s)</td><td>No (se usa full_name)</td></tr>
+                    <tr><td><code>email</code></td><td>string</td><td>Correo corporativo</td><td>✅</td></tr>
+                    <tr><td><code>status</code></td><td>string</td><td>"activo" | "inactivo" | "pendiente"</td><td>✅ Determina IsActive</td></tr>
+                    <tr><td><code>start_date</code></td><td>string|null</td><td>Fecha de inicio del contrato (YYYY-MM-DD)</td><td>No (disponible si se necesita)</td></tr>
+                    <tr><td><code>active_until</code></td><td>object|null</td><td>Objeto <code>{"date": "YYYY-MM-DD"}</code>; null = contrato indefinido vigente</td><td>✅ TerminationDate</td></tr>
+                    <tr><td><code>termination_reason</code></td><td>string|null</td><td>Motivo de la baja (solo cuando status=inactivo)</td><td>✅</td></tr>
+                    <tr><td><code>current_job.area</code></td><td>string</td><td>Área/departamento actual</td><td>✅ Department</td></tr>
+                    <tr><td><code>current_job.role</code></td><td>string</td><td>Cargo actual</td><td>✅ Position</td></tr>
+                    <tr><td><code>current_job.contract_type</code></td><td>string|null</td><td>Tipo de contrato (indefinido, plazo fijo, etc.)</td><td>No (disponible si se necesita)</td></tr>
+                    <tr><td><code>current_job.company_id</code></td><td>integer|null</td><td>ID de empresa en Buk (multi-empresa)</td><td>No</td></tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 7. VERIFICAR LA INTEGRACIÓN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>7. Verificar la Integración</h2>
+
+            <h3>7.1 Verificar conexión API (polling)</h3>
+            <ol>
+                <li>Ir a <strong>Administración → Integraciones → RRHH → Buk</strong></li>
+                <li>Hacer clic en <strong>Probar Conexión</strong></li>
+                <li>El resultado debe mostrar el número de empleados activos en Buk</li>
+            </ol>
+
+            <h3>7.2 Verificar recepción de webhooks con Postman/curl</h3>
+            <p>Simular un webhook de Buk para verificar que Limen lo procesa correctamente:</p>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85rem;">
+                POST https://api.limen.app/api/webhooks/buk<br>
+                <br>
+                Headers:<br>
+                &nbsp;&nbsp;Content-Type: application/json<br>
+                &nbsp;&nbsp;Authorization: Bearer {WebhookSecret configurado en Limen}<br>
+                &nbsp;&nbsp;X-Tenant-Id: {GUID del tenant}<br>
+                <br>
+                Body:<br>
+                {<br>
+                &nbsp;&nbsp;"event_type": "work_ended",<br>
+                &nbsp;&nbsp;"timestamp": "2026-05-17T14:30:00Z",<br>
+                &nbsp;&nbsp;"data": {<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;"rut": "12345678-9",<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;"full_name": "Juan Pérez González",<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;"termination_date": "2026-05-17",<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;"termination_reason": "Renuncia voluntaria"<br>
+                &nbsp;&nbsp;}<br>
+                }
+            </div>
+            <p><strong>Respuesta esperada:</strong> HTTP 200 con <code>{"received": true}</code></p>
+
+            <h3>7.3 Verificar en AuditLog de Limen</h3>
+            <ol>
+                <li>Ir a <strong>Administración → Auditoría</strong></li>
+                <li>Buscar eventos con tipo <code>BUK_WEBHOOK_AUTH_FAILED</code> (no deben existir si la configuración es correcta)</li>
+                <li>Si el empleado existe en Limen, buscar el evento de bloqueo en hardware</li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 8. TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════ -->
+            <h2>8. Troubleshooting</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>"Probar Conexión" devuelve error 401</td>
+                        <td>El API Key es incorrecto o expiró</td>
+                        <td>Regenerar el token en Buk: <strong>Configuración → API Access</strong> y actualizar en Limen</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook recibe HTTP 401 desde Limen</td>
+                        <td>El Bearer Token en Buk no coincide con el Webhook Secret en Limen</td>
+                        <td>Verificar que ambos valores sean idénticos (copiar/pegar, sin espacios extra)</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook recibe HTTP 400 "Header X-Tenant-Id requerido"</td>
+                        <td>No se configuró el header <code>X-Tenant-Id</code> en Buk</td>
+                        <td>Agregar el header en la configuración del webhook en Buk (ver sección 4.4)</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook recibe HTTP 404 "Tenant o configuración Buk no encontrada"</td>
+                        <td>El GUID en <code>X-Tenant-Id</code> no corresponde a ningún tenant con Buk configurado</td>
+                        <td>Verificar el Tenant ID en Limen: <strong>Administración → Tenant → ID</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Baja procesada exitosamente pero el empleado no se bloquea en los torniquetes</td>
+                        <td>El RUT del empleado en Limen no coincide con el RUT en Buk, o el empleado no está sincronizado</td>
+                        <td>Ejecutar sincronización manual: <strong>Administración → Identidades → Sincronizar ahora</strong></td>
+                    </tr>
+                    <tr>
+                        <td>El job de sincronización periódica no actualiza la nómina</td>
+                        <td>El API Key no tiene scope de lectura de empleados</td>
+                        <td>Regenerar el token con scope <code>employees:read</code> en el panel de Buk</td>
+                    </tr>
+                    <tr>
+                        <td>Webhooks de Buk llegan con event_type desconocido</td>
+                        <td>Buk puede cambiar nombres de eventos entre versiones</td>
+                        <td>Revisar logs de Limen (Serilog) para ver el event_type exacto recibido y reportar al soporte Limen</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fef2f2; border-left-color: #dc2626;">
+                <strong>Caso crítico — Baja no procesada:</strong> Si un empleado fue finiquitado pero
+                su acceso físico sigue activo, ejecutar el <strong>bloqueo manual inmediato</strong>
+                desde Limen: <strong>Personas → [nombre del empleado] → Bloquear acceso</strong>.
+                Esto actúa directamente sobre el hardware sin esperar el webhook.
             </div>
         </div>
     </div>

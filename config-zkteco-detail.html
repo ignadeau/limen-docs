@@ -3,28 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Limen - Configuración Avanzada ZKTEco</title>
+    <title>Limen - ZKBio: Puertas y Troubleshooting</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
+<body class="animate-in">
     <header>
-        <h1>ZKBIO CVSECURITY SETUP</h1>
-        <p>Configuración, Sincronización y Operación del Hardware</p>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>ZKBIO — PUERTAS Y DIAGNÓSTICO</h1>
+        <p>Mapeo de hardware, sincronización de eventos y resolución de problemas</p>
     </header>
 
     <div class="container">
-        <div class="main-card">
-            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
-            
-            <h2>1. Configuración de Conectividad</h2>
-            <p>Vaya a <code>Administración > Configuración de Acceso</code>. IP, Usuario API y Password.</p>
+        <div class="main-card hover-lift">
+            <a href="config-zkteco-master.html" class="back-link">← Volver a Configuración Inicial</a>
 
-            <h2>2. Sincronización de Identidades</h2>
-            <p>Limen utiliza <code>IAccessControlPlatformClient</code> para enviar altas y bajas en tiempo real (&lt;30s).</p>
-            
-            <div style="margin-top: 1rem;">
-                <a href="config-zkteco-schedules.html" style="color: var(--navy); font-weight: bold;">
-                    → Ver detalle de mapeo de horarios y niveles de acceso
+            <!-- ── MAPEO DE PUERTAS ── -->
+            <h2>Mapeo de Puertas (Hardware → Limen)</h2>
+            <p>
+                Cada puerta física en ZKBio tiene un identificador único (<strong>DoorID</strong>).
+                Limen usa ese ID para enviar comandos de apertura, recibir eventos y mostrar reportes.
+                El mapeo se hace en <strong>Administración → Infraestructura → Puertas</strong>.
+            </p>
+
+            <h3 style="margin-top:1.5rem; font-size:1rem; color: var(--navy);">Opción A — Importar automáticamente desde el hardware</h3>
+            <ol style="line-height: 2; padding-left: 1.5rem;">
+                <li>Abre el diálogo <strong>Nueva Puerta</strong>.</li>
+                <li>En la sección <em>Importar desde hardware</em>, haz clic en <strong>Listar puertas del hardware</strong>.</li>
+                <li>Limen consultará el endpoint <code>/api/door/list</code> de ZKBio y mostrará todas las puertas disponibles.</li>
+                <li>Haz clic en <strong>Usar este ID</strong> junto a la puerta deseada. El campo "ID en hardware" se completa automáticamente con el valor correcto.</li>
+                <li>Asigna la zona y el nombre dentro de Limen, luego guarda.</li>
+            </ol>
+
+            <h3 style="margin-top:1.5rem; font-size:1rem; color: var(--navy);">Opción B — Ingresar el ID manualmente</h3>
+            <ol style="line-height: 2; padding-left: 1.5rem;">
+                <li>En ZKBio, ve a <strong>Access → Device Management → Door Setting</strong>.</li>
+                <li>Anota el valor de la columna <strong>Serial Number</strong> de la puerta (ej: <code>VDE2242400041</code>).
+                    Ese es el ID que ZKBio usa internamente para identificar la puerta en la API.</li>
+                <li>En Limen, crea la puerta e ingresa ese valor en el campo <strong>ID en hardware</strong>.</li>
+            </ol>
+
+            <div class="example-box pulse-gold">
+                ⚠️ <strong>El ID en hardware es sensible.</strong> Si usas un ID incorrecto, los comandos de apertura
+                remota llegarán a la puerta equivocada (o no llegarán). Siempre verifica con "Listar puertas"
+                o consultando directamente en el panel ZKBio.
+            </div>
+
+            <!-- ── SINCRONIZACIÓN DE EVENTOS ── -->
+            <h2>Sincronización Automática de Eventos</h2>
+            <p>
+                Limen corre un job en background (<code>AccessEventSyncJob</code>) cada <strong>30 segundos</strong>
+                que consulta el endpoint <code>/api/transaction/monitor</code> de ZKBio para traer los eventos
+                de acceso nuevos (entradas, salidas, accesos denegados).
+            </p>
+            <table class="field-table">
+                <tr><th>Comportamiento</th><th>Detalle</th></tr>
+                <tr><td><strong>Ventana inicial</strong></td><td>Si no hay eventos previos en BD, retrocede 2 horas para no perder eventos recientes al activar.</td></tr>
+                <tr><td><strong>Overlap</strong></td><td>En cada ciclo se retrocede 2 minutos sobre el último evento para capturar eventos que el hardware entrega con retraso.</td></tr>
+                <tr><td><strong>Deduplicación</strong></td><td>El índice único <code>IX_AccessEvents_TenantDedup</code> en BD evita duplicados incluso en caso de reinicio o concurrencia.</td></tr>
+                <tr><td><strong>Errores de cifrado</strong></td><td>Si las credenciales no se pueden descifrar (clave DataProtection rotada), se registra un warning una sola vez y se usa el simulador hasta que se guarden nuevamente.</td></tr>
+            </table>
+
+            <!-- ── TROUBLESHOOTING ── -->
+            <h2>Troubleshooting — Diagnóstico de Problemas</h2>
+
+            <h3 style="margin-top:1.5rem; font-size:1rem; color: var(--navy);">Síntoma: "No se encontraron puertas en el hardware"</h3>
+            <p>Revisa los logs del servidor (nivel Warning). Los mensajes clave son:</p>
+            <table class="field-table">
+                <tr><th>Mensaje en Log</th><th>Causa</th><th>Solución</th></tr>
+                <tr>
+                    <td><code>Sin tenant resuelto → simulador</code></td>
+                    <td>No hay tenant asociado a la sesión actual</td>
+                    <td>Verificar que el usuario tiene un tenant asignado y que el subdominio está bien configurado</td>
+                </tr>
+                <tr>
+                    <td><code>sin config de AC (o Provider=None)</code></td>
+                    <td>La integración ZKBio no fue guardada en este tenant</td>
+                    <td>Ir a Integraciones → Control de Acceso → seleccionar ZKBio → guardar</td>
+                </tr>
+                <tr>
+                    <td><code>ZkBio configurado pero sin API Key</code></td>
+                    <td>Se guardó la URL pero no la API Key</td>
+                    <td>Editar la integración e ingresar la API Key generada en ZKBio API Management</td>
+                </tr>
+                <tr>
+                    <td><code>HTTP 404</code> en todos los endpoints</td>
+                    <td>La URL base apunta al servidor correcto pero la API no está habilitada, o la API Key es inválida y el servidor retorna 404 en lugar de 401</td>
+                    <td>Ver sección "Verificar API Key" más abajo</td>
+                </tr>
+                <tr>
+                    <td><code>devolvió HTML</code></td>
+                    <td>La URL base apunta al portal web de ZKBio en lugar de la API, o la API Key es completamente incorrecta</td>
+                    <td>Verificar que la URL no incluye rutas extra (no debe terminar en <code>/login</code>, <code>/index</code>, etc.)</td>
+                </tr>
+                <tr>
+                    <td><code>code=-1</code> o mensaje de "No permission"</td>
+                    <td>La API Key existe pero no tiene permisos para el módulo de puertas</td>
+                    <td>En ZKBio API Management, editar el token y agregar los permisos de Access Control</td>
+                </tr>
+            </table>
+
+            <h3 style="margin-top:1.5rem; font-size:1rem; color: var(--navy);">Cómo verificar la API Key manualmente</h3>
+            <p>Puedes probar la key directamente desde el navegador o con curl:</p>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; word-break: break-all;">
+                # Desde el navegador (reemplazar con tu URL y key):<br>
+                https://zkbio.tuempresa.com/api/door/list?pageNo=1&amp;pageSize=10&amp;access_token=TU_API_KEY<br><br>
+                # Con curl:<br>
+                curl "https://zkbio.tuempresa.com/api/door/list?pageNo=1&amp;pageSize=10&amp;access_token=TU_API_KEY"
+            </div>
+            <p style="margin-top: 0.75rem;">La respuesta esperada es un JSON con <code>"code": 0</code>. Si recibes HTML o <code>"code": -1</code>, la key está mal o no tiene permisos.</p>
+
+            <h3 style="margin-top:1.5rem; font-size:1rem; color: var(--navy);">Otros errores frecuentes</h3>
+            <table class="field-table">
+                <tr><th>Error</th><th>Causa probable</th><th>Solución</th></tr>
+                <tr>
+                    <td><strong>Timeout / conexión rechazada</strong></td>
+                    <td>Firewall bloqueando el puerto, o el servidor ZKBio está apagado</td>
+                    <td>Verificar que el servidor está en línea y que el puerto (por defecto 8098 o 443) está abierto desde el servidor de Limen</td>
+                </tr>
+                <tr>
+                    <td><strong>SSL error / certificado inválido</strong></td>
+                    <td>ZKBio usa HTTPS con certificado autofirmado</td>
+                    <td>Configurar la URL con <code>http://</code> si el servidor no tiene certificado válido, o instalar el certificado raíz en el servidor de Limen</td>
+                </tr>
+                <tr>
+                    <td><strong>Eventos que no aparecen</strong></td>
+                    <td>El job sincroniza cada 30s; puede haber hasta 30s de latencia</td>
+                    <td>Esperar un ciclo completo. Si persiste, revisar logs de <code>AccessEventSyncJob</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Credenciales no se pueden descifrar</strong></td>
+                    <td>La clave DataProtection cambió (ej: nuevo servidor, deployment limpio)</td>
+                    <td>Ir a Integraciones y volver a guardar las credenciales con la clave actual</td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 2rem;">
+                <a href="config-zkteco-schedules.html" class="menu-item hover-lift">
+                    <h3>→ Siguiente: Horarios y Niveles de Acceso</h3>
+                    <p>Cómo mapear los AccessProfiles de Limen con los niveles de acceso configurados en ZKBio.</p>
                 </a>
             </div>
         </div>
