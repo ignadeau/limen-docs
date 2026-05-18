@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración SAP SuccessFactors (RRHH)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>SAP SUCCESSFACTORS INTEGRATION</h1>
+        <p>Employee Central · OAuth 2.0 · OData v2 · Sincronización de Nómina</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 1. QUÉ ES Y PARA QUÉ SIRVE
+            ═══════════════════════════════════════════════════════ -->
+            <h2>1. Qué es SAP SuccessFactors Employee Central</h2>
+            <p>
+                SAP SuccessFactors Employee Central es el módulo de Recursos Humanos de SAP que gestiona
+                la nómina de empleados, contratos, altas, bajas y estructura organizacional.
+                Es el sistema de registro (System of Record) de RRHH para organizaciones que utilizan el
+                ecosistema SAP a nivel corporativo.
+            </p>
+            <p>
+                La integración de Limen con SuccessFactors permite:
+            </p>
+            <ul>
+                <li>Mantener sincronizada la nómina activa de empleados con los perfiles de acceso físico.</li>
+                <li>Detectar automáticamente bajas laborales y bloquear las credenciales de acceso en el sistema de control físico.</li>
+                <li>Validar en tiempo real si un RUT corresponde a un empleado activo antes de autorizar acceso.</li>
+            </ul>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Mecanismo</th><th>Cuándo actúa</th><th>Latencia típica</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Polling periódico</strong></td>
+                        <td>Sincronización completa de nómina activa (job cada 15 min)</td>
+                        <td>≤ 15 min</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Validación en acceso</strong></td>
+                        <td>Verificación de empleado activo al presentar credencial</td>
+                        <td>&lt; 2 seg</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #fef3c7; border-left-color: #d97706;">
+                <strong>Diferencia con GeoVictoria y Buk:</strong> SuccessFactors no ofrece webhooks
+                salientes para eventos de baja. La sincronización es exclusivamente por polling.
+                Si necesitas latencia inferior a 15 minutos para bloqueos de baja, considera complementar
+                con un workflow en SuccessFactors que notifique a Limen mediante el módulo de Integration Center
+                (configuración adicional fuera del alcance de esta guía).
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 2. PREREQUISITOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>2. Prerequisitos</h2>
+
+            <h3>2.1 Versión de SuccessFactors</h3>
+            <p>
+                Esta integración utiliza <strong>OData v2 API de Employee Central</strong>.
+                Requiere:
+            </p>
+            <ul>
+                <li>SuccessFactors Employee Central habilitado (no aplica solo con módulos de Performance o Learning).</li>
+                <li>API OData habilitada para el Company ID (activado por defecto en instancias modernas).</li>
+                <li>Acceso de administración para crear OAuth2 Client Applications.</li>
+            </ul>
+
+            <h3>2.2 Permisos necesarios en SuccessFactors</h3>
+            <p>
+                El usuario administrador que realice la configuración necesita los siguientes permisos
+                en <strong>Admin Center → Permission Settings</strong>:
+            </p>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Permiso</th><th>Ubicación en Admin Center</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Manage OAuth2 Client Applications</td>
+                        <td>Admin Center → Manage Security → OAuth2 Client Application</td>
+                    </tr>
+                    <tr>
+                        <td>Employee Central – Read access a PerPerson</td>
+                        <td>Admin Center → Manage Permission Roles → Data Access → Employee Central</td>
+                    </tr>
+                    <tr>
+                        <td>Ver campos custom de persona (custom01..custom15)</td>
+                        <td>Mismo rol, sección "National ID Information" o "Personal Information"</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 3. CREAR EL OAUTH2 CLIENT APPLICATION
+            ═══════════════════════════════════════════════════════ -->
+            <h2>3. Crear el OAuth2 Client Application en SuccessFactors</h2>
+            <p>
+                Limen usa <strong>OAuth 2.0 Client Credentials (server-to-server)</strong>.
+                No requiere que un usuario humano inicie sesión; el sistema se autentica directamente
+                con un Client ID y Client Secret.
+            </p>
+
+            <h3>3.1 Acceder a OAuth2 Client Applications</h3>
+            <ol>
+                <li>Ingresar a SuccessFactors como administrador.</li>
+                <li>Ir a <strong>Admin Center</strong> (ícono de llave inglesa o engranaje en la barra superior).</li>
+                <li>Buscar en el buscador: <em>"OAuth"</em>.</li>
+                <li>Seleccionar <strong>Manage OAuth2 Client Applications</strong>.</li>
+            </ol>
+
+            <h3>3.2 Crear la aplicación cliente</h3>
+            <ol>
+                <li>Hacer clic en <strong>Register Client Application</strong>.</li>
+                <li>Completar el formulario:</li>
+            </ol>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo</th><th>Valor recomendado</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Application Name</strong></td>
+                        <td><code>Limen - Control de Acceso</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><code>Integración con plataforma Limen para sincronización de nómina y control de acceso físico</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Application URL</strong></td>
+                        <td>URL de tu instancia Limen (ej: <code>https://tuempresa.limen.app</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bind to Users</strong></td>
+                        <td>No (server-to-server, sin usuario asociado)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Token Validity (seconds)</strong></td>
+                        <td><code>1800</code> (30 minutos; Limen cachea el token y lo renueva automáticamente)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <ol start="3">
+                <li>Hacer clic en <strong>Generate</strong> para obtener el Client Secret (o generar un certificado X.509 si tu política de seguridad lo requiere).</li>
+                <li>
+                    <strong>Copiar y guardar el Client Secret</strong> de inmediato.
+                    <strong>Solo se muestra una vez.</strong> Si lo pierdes, deberás regenerarlo.
+                </li>
+                <li>Anotar el <strong>Client ID</strong> generado (identificador alfanumérico que aparece junto al nombre de la aplicación).</li>
+            </ol>
+
+            <div class="example-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+                <strong>Seguridad:</strong> Crear un Client Application dedicado exclusivamente para Limen.
+                No reutilizar credenciales de otras integraciones (SAP Integration Center, SAP CPI, etc.).
+                Si las credenciales se comprometen, se pueden revocar sin afectar otras integraciones.
+            </div>
+
+            <h3>3.3 Obtener el Company ID</h3>
+            <ol>
+                <li>En Admin Center, buscar <em>"Company Information"</em>.</li>
+                <li>Seleccionar <strong>Basic Company Information</strong>.</li>
+                <li>El campo <strong>Company ID</strong> es el identificador único de tu instancia (ej: <code>MIEMPRESA_CHILE</code> o un código numérico).</li>
+                <li>Anotar este valor — se necesita para el flujo OAuth2.</li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 4. ENCONTRAR EL CAMPO RUT EN SUCCESSFACTORS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>4. Encontrar el Campo que Almacena el RUT</h2>
+            <p>
+                SuccessFactors no tiene un campo estándar llamado "RUT". El identificador tributario
+                chileno se almacena en un campo <strong>custom</strong> del objeto <code>PerPerson</code>.
+                El nombre exacto varía según la configuración de cada implementación de SuccessFactors.
+            </p>
+
+            <h3>4.1 Opciones comunes</h3>
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo OData</th><th>Descripción</th><th>Probabilidad</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>custom01</code></td>
+                        <td>Primer campo custom de PerPerson. Muy usado para documentos nacionales.</td>
+                        <td>Alta</td>
+                    </tr>
+                    <tr>
+                        <td><code>custom02</code></td>
+                        <td>Segundo campo custom (si custom01 está ocupado por otro dato).</td>
+                        <td>Media</td>
+                    </tr>
+                    <tr>
+                        <td><code>personIdExternal</code></td>
+                        <td>ID externo del empleado. Algunas implementaciones lo populan con el RUT.</td>
+                        <td>Media</td>
+                    </tr>
+                    <tr>
+                        <td><code>nationalId</code></td>
+                        <td>Disponible en el objeto PerNationalId (entity separada, requiere expand adicional).</td>
+                        <td>Baja (estructura diferente)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.2 Cómo verificar el campo correcto</h3>
+            <ol>
+                <li>
+                    Ejecutar la siguiente query OData en el navegador (con tu Company ID y credenciales):
+                    <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85em;">
+                        GET https://api10.successfactors.com/odata/v2/PerPerson?$top=1&amp;$format=json
+                    </div>
+                    (Reemplazar <code>api10</code> por el datacenter de tu instancia.)
+                </li>
+                <li>Revisar la respuesta JSON: buscar el campo que contiene el RUT en formato <code>12345678-9</code>, <code>12.345.678-9</code> o similar.</li>
+                <li>El nombre de ese campo es el valor a ingresar en <strong>Campo RUT (OData)</strong> en Limen.</li>
+            </ol>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Tip:</strong> Si no tienes acceso directo a la API OData, consulta al equipo funcional
+                de SuccessFactors de tu empresa. Ellos tienen acceso a la herramienta <em>Metadata Framework (MDF)</em>
+                y pueden identificar en qué campo custom se almacena el RUT.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 5. CONFIGURAR EN LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>5. Configurar la Integración en Limen</h2>
+            <ol>
+                <li>Ingresar a Limen como <strong>TenantAdmin</strong>.</li>
+                <li>Ir a <strong>Administración → Integraciones → RRHH → SAP SuccessFactors</strong>.</li>
+                <li>Completar los campos:</li>
+            </ol>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>URL de la API</strong></td>
+                        <td>URL base del datacenter donde está alojada tu instancia SF. Sin barra final.</td>
+                        <td><code>https://api10.successfactors.com</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client ID</strong></td>
+                        <td>Identificador del OAuth2 Client Application creado en el paso 3.</td>
+                        <td><code>limen-prod-client</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client Secret</strong></td>
+                        <td>Secret del OAuth2 Client Application. Se cifra al guardar; no se muestra después.</td>
+                        <td><code>eyJhbGciOi...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Company ID</strong></td>
+                        <td>Identificador de la empresa en SuccessFactors (obtenido en el paso 3.3).</td>
+                        <td><code>MIEMPRESA_CHILE</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Campo RUT (OData)</strong></td>
+                        <td>Nombre del campo de PerPerson que almacena el RUT (obtenido en el paso 4).</td>
+                        <td><code>custom01</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <ol start="4">
+                <li>Hacer clic en <strong>Guardar</strong>.</li>
+                <li>Hacer clic en <strong>Probar Conexión</strong>. Debe mostrar: <em>"Conexión verificada correctamente. N empleados activos."</em></li>
+            </ol>
+
+            <div class="example-box" style="background: #f0fdf4; border-left-color: #16a34a;">
+                <strong>Seguridad:</strong> Las credenciales se cifran con AES-256 (Microsoft DataProtection)
+                antes de almacenarse en la base de datos. El Client Secret nunca queda en texto plano
+                ni en logs ni en appsettings.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 6. ENDPOINTS ODATA UTILIZADOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>6. Endpoints OData Implementados</h2>
+            <p>
+                Limen consume los siguientes endpoints de la API OData v2 de SuccessFactors:
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Operación</th><th>Endpoint OData</th><th>Parámetros clave</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Obtener token OAuth</strong></td>
+                        <td><code>POST /oauth/token</code></td>
+                        <td><code>grant_type=client_credentials</code>, <code>company_id</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Empleados activos</strong></td>
+                        <td><code>GET /odata/v2/PerPerson</code></td>
+                        <td>
+                            <code>$select=personIdExternal,{rutField}</code><br>
+                            <code>$expand=employmentNav</code><br>
+                            <code>$top=200&amp;$skip=N</code><br>
+                            <code>$format=json</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Test de conexión</strong></td>
+                        <td><code>GET /odata/v2/PerPerson</code></td>
+                        <td><code>$top=1&amp;$format=json</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                El filtro de empleados activos vs. desvinculados se aplica en Limen evaluando el campo
+                <code>endDate</code> del <code>employmentNav</code>:
+            </p>
+            <ul>
+                <li><code>endDate</code> nulo o ausente → empleo vigente → empleado activo.</li>
+                <li><code>endDate</code> con fecha futura → empleo vigente → empleado activo.</li>
+                <li><code>endDate</code> con fecha pasada → empleo terminado → empleado desvinculado.</li>
+            </ul>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 7. CÓMO FUNCIONA LA SINCRONIZACIÓN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>7. Cómo Funciona la Sincronización</h2>
+
+            <h3>7.1 Flujo de sincronización periódica</h3>
+            <ol>
+                <li>Cada 15 minutos, el job <em>IdentitySyncJob</em> de Limen invoca <code>IHrSystemClient.GetActiveEmployeesAsync()</code>.</li>
+                <li>Limen verifica el token OAuth en cache; si expiró, lo renueva automáticamente (POST a <code>/oauth/token</code>).</li>
+                <li>Se pagina PerPerson de 200 en 200 registros hasta obtener toda la nómina.</li>
+                <li>Los RUT obtenidos se comparan con los empleados activos en Limen:
+                    <ul>
+                        <li><strong>RUT nuevo en SF, no en Limen:</strong> se crea el perfil y se asigna acceso en la plataforma física (ZK/Hikvision).</li>
+                        <li><strong>RUT en Limen pero no en SF:</strong> se bloquea el acceso físico y se marca como desvinculado.</li>
+                        <li><strong>RUT en ambos:</strong> sin acción (a menos que haya cambios en nombre/departamento).</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>7.2 Normalización del RUT</h3>
+            <p>
+                SAP SuccessFactors puede almacenar el RUT en distintos formatos según la configuración:
+                <code>"12.345.678-9"</code>, <code>"12345678-9"</code> o <code>"123456789"</code>.
+                Limen normaliza todos los formatos a <strong>sin puntos ni guión</strong> antes de comparar,
+                por lo que la integración funciona independientemente del formato elegido.
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Formato en SF</th><th>Normalizado por Limen</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>12.345.678-9</code></td><td><code>123456789</code></td></tr>
+                    <tr><td><code>12345678-9</code></td><td><code>123456789</code></td></tr>
+                    <tr><td><code>12345678-K</code></td><td><code>12345678K</code></td></tr>
+                    <tr><td><code>123456789</code></td><td><code>123456789</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>7.3 Caché del token OAuth</h3>
+            <p>
+                El token se cachea en memoria por <code>expires_in - 60</code> segundos (típicamente 1740 s ≈ 29 minutos).
+                Un minuto antes de que expire, la siguiente request obtiene un nuevo token automáticamente.
+                No hay rotación activa de tokens; si el servidor de SuccessFactors no está disponible
+                al momento de renovar, la operación retorna lista vacía y reintenta en el próximo ciclo.
+            </p>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 8. TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════ -->
+            <h2>8. Troubleshooting</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Error</th><th>Causa probable</th><th>Solución</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>HTTP 401 Unauthorized</code> al obtener token</td>
+                        <td>Client ID, Client Secret o Company ID incorrectos.</td>
+                        <td>Verificar los tres valores. El Company ID distingue mayúsculas.</td>
+                    </tr>
+                    <tr>
+                        <td><code>HTTP 401</code> al llamar a PerPerson (ya con token)</td>
+                        <td>Token expirado o el Client App no tiene permisos de lectura en Employee Central.</td>
+                        <td>
+                            Limen limpia el cache y reintenta una vez. Si persiste, revisar los permisos
+                            del role asignado al Client App en Admin Center.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>HTTP 403 Forbidden</code></td>
+                        <td>El Client App no tiene acceso al objeto PerPerson o al campo de RUT configurado.</td>
+                        <td>
+                            En Admin Center → Manage Permission Roles, asegurarse de que el rol asociado
+                            al Client App tiene acceso de lectura a <em>Personal Information</em>
+                            y al campo custom específico.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>HTTP 429 Too Many Requests</code></td>
+                        <td>Se excedió el rate limit de la API SuccessFactors.</td>
+                        <td>
+                            Limen loguea el evento y retorna los registros parciales acumulados.
+                            La sincronización completa se completará en el próximo ciclo de 15 minutos.
+                            Considera aumentar el intervalo de polling si la nómina es muy grande.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Campo RUT vacío en todos los empleados</td>
+                        <td>
+                            El valor de <strong>Campo RUT (OData)</strong> configurado en Limen
+                            no coincide con el campo real en SuccessFactors.
+                        </td>
+                        <td>
+                            Revisar el paso 4 de esta guía. Los logs de Limen mostrarán
+                            <em>"[SAP-SF] Campo 'custom01' no encontrado en PerPerson"</em>
+                            si el nombre es incorrecto.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Timeout en la prueba de conexión</td>
+                        <td>El datacenter de SuccessFactors no es accesible desde el servidor Limen.</td>
+                        <td>
+                            Verificar que el servidor Limen tiene salida a internet hacia
+                            <code>api10.successfactors.com</code> (o el datacenter correspondiente)
+                            en el puerto 443. Revisar reglas de firewall y proxy corporativo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Nómina parcial: menos empleados de lo esperado</td>
+                        <td>
+                            Limitación de paginación o campos de empleos sin <code>endDate</code>
+                            que SuccessFactors interpreta como terminados.
+                        </td>
+                        <td>
+                            Revisar en SF que los contratos indefinidos tienen <code>endDate</code>
+                            nulo (no con fecha futura muy lejana, que podría interpretarse como terminado
+                            si hay un bug en la data).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Error <code>invalid_client</code> en el token</td>
+                        <td>El Client App fue revocado o el secret fue regenerado en SF.</td>
+                        <td>
+                            Ir a Admin Center → Manage OAuth2 Client Applications → regenerar
+                            el secret → actualizar las credenciales en Limen.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.1 Dónde ver los logs</h3>
+            <p>
+                Todos los mensajes del cliente SAP se prefijan con <code>[SAP-SF]</code>.
+                Para filtrar en los logs de Limen:
+            </p>
+            <div class="example-box" style="background: #0f172a; color: #38bdf8; font-family: monospace; font-size: 0.85em;">
+                # PowerShell — ver logs en tiempo real filtrados por SAP-SF:<br>
+                Get-Content -Path "C:\Limen\logs\limen-.log" -Wait | Select-String "\[SAP-SF\]"
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 9. COMPARATIVA CON BUK Y GEOVICTORIA
+            ═══════════════════════════════════════════════════════ -->
+            <h2>9. Comparativa con Buk y GeoVictoria</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th>SAP SuccessFactors</th>
+                        <th>Buk</th>
+                        <th>GeoVictoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Autenticación</strong></td>
+                        <td>OAuth 2.0 Client Credentials</td>
+                        <td>API Key estático</td>
+                        <td>Login con ConsumerKey/Secret → Bearer token</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Protocolo de datos</strong></td>
+                        <td>OData v2 (REST/JSON)</td>
+                        <td>REST/JSON</td>
+                        <td>REST/JSON</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Webhooks/eventos en tiempo real</strong></td>
+                        <td>No (solo polling)</td>
+                        <td>Sí (baja laboral &lt; 30 seg)</td>
+                        <td>No (solo polling)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Latencia de sincronización</strong></td>
+                        <td>≤ 15 minutos</td>
+                        <td>&lt; 30 segundos para bajas</td>
+                        <td>≤ 15 minutos</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Campo RUT</strong></td>
+                        <td>Configurable (custom01..custom15 o personIdExternal)</td>
+                        <td>Campo <code>rut</code> estándar</td>
+                        <td>Campo <code>identifier</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Perfil de cliente</strong></td>
+                        <td>Empresas con ecosistema SAP corporativo (minería, banca, industria pesada)</td>
+                        <td>PyMEs y medianas empresas chilenas</td>
+                        <td>Empresas con asistencia/turnos en Chile</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paginación</strong></td>
+                        <td>$top/$skip (OData estándar), 200 por página</td>
+                        <td>page/page_size, 100 por página</td>
+                        <td>Sin paginación (retorna todo en una llamada)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Necesidad de configuración adicional</strong></td>
+                        <td>Alta (crear OAuth App, mapear campo RUT)</td>
+                        <td>Media (API Key + webhook)</td>
+                        <td>Baja (URL + credenciales)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box" style="background: #eff6ff; border-left-color: #3b82f6;">
+                <strong>Recomendación:</strong> Usa SAP SuccessFactors cuando la empresa ya tiene SAP como
+                sistema de RRHH. Si el cliente usa Buk o GeoVictoria como RRHH, prefiere esas integraciones
+                por ser más simples y con soporte de webhooks para bajas inmediatas.
+            </div>
+
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #6b7280; font-size: 0.85rem;">
+        Limen — Identity &amp; Access Orchestration for Modern Operations<br>
+        &copy; 2026 DESINTEGRA | Desarrollo e Integraciones
+    </footer>
+
+</body>
+</html>
