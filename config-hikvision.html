@@ -3,39 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Limen - Integración Hikvision HikCentral</title>
+    <title>Limen - Integración Hikvision ISAPI</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
+<body class="animate-in">
     <header>
-        <h1>HIKVISION HIKCENTRAL INTEGRATION</h1>
-        <p>Orquestación de Acceso y Video sobre OpenAPI</p>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>HIKVISION</h1>
+        <p>Control de Acceso vía ISAPI — Configuración y Referencia Técnica</p>
     </header>
 
     <div class="container">
         <div class="main-card">
             <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
-            
-            <h2>1. Requisitos de la Plataforma</h2>
-            <p>Limen se integra con <strong>HikCentral Professional v2.0+</strong> utilizando el protocolo HTTPS y el módulo de OpenAPI.</p>
 
-            <h2>2. Configuración de Credenciales</h2>
-            <p>En HikCentral, cree un "App" en el centro de API y obtenga:</p>
+            <!-- ═══════════════════════════════════════════════════════
+                 1. PRODUCTO CORRECTO: ISAPI, NO HIKCENTRAL
+            ═══════════════════════════════════════════════════════ -->
+            <h2>1. Qué producto de Hikvision usa Limen</h2>
+
+            <div class="example-box">
+                ⚠️ <strong>Importante:</strong> Hikvision tiene <em>dos</em> APIs completamente distintas.
+                Limen usa <strong>ISAPI (device-level)</strong>, no HikCentral OpenAPI.
+                Elegir la incorrecta es el error más frecuente en la configuración.
+            </div>
+
             <table class="field-table">
-                <tr><th>Parámetro</th><th>Descripción</th></tr>
-                <tr><td>AppKey</td><td>Identificador único de la aplicación Limen.</td></tr>
-                <tr><td>AppSecret</td><td>Firma para el cifrado de las peticiones (HmacSHA256).</td></tr>
-                <tr><td>Puerto OpenAPI</td><td>Default: 80 para HTTP o 443 para HTTPS.</td></tr>
+                <thead>
+                    <tr><th>Característica</th><th>ISAPI (lo que usa Limen)</th><th>HikCentral OpenAPI (no usado)</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>¿Qué es?</strong></td>
+                        <td>API REST embebida en cada dispositivo físico (controladora DS-K2xxx, panel ACS, NVR, etc.)</td>
+                        <td>API del software de gestión centralizada HikCentral Professional</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Autenticación</strong></td>
+                        <td>HTTP Digest (RFC 7616) — usuario + contraseña del dispositivo</td>
+                        <td>AppKey + AppSecret con firma HMAC-SHA256 por request</td>
+                    </tr>
+                    <tr>
+                        <td><strong>URL base</strong></td>
+                        <td>IP o hostname directo del dispositivo: <code>http://192.168.1.64</code></td>
+                        <td>Servidor HikCentral: <code>https://hkc.empresa.com</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Requiere software extra</strong></td>
+                        <td>No. La API está en el firmware del dispositivo.</td>
+                        <td>Sí. HikCentral Professional instalado y con licencia activa.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Credenciales en Limen</strong></td>
+                        <td>Usuario y contraseña del dispositivo (ej: <code>admin / Admin1234</code>)</td>
+                        <td>AppKey y AppSecret generados en HikCentral → Open Platform</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dispositivos compatibles</strong></td>
+                        <td>DS-K2800 series, DS-K1T671 series, DS-K3 series, NVR con módulo ACS, DS-K2604T, etc.</td>
+                        <td>Cualquier dispositivo gestionado por HikCentral</td>
+                    </tr>
+                </tbody>
             </table>
 
-            <h2>3. Mapeo de Dispositivos</h2>
-            <ul>
-                <li><strong>Controladoras de Acceso:</strong> Utilice el <code>IndexCode</code> de la puerta en HikCentral como el <code>HardwareID</code> en Limen.</li>
-                <li><strong>Cámaras LPR:</strong> Limen recibe el evento de patente vía <code>/api/resource/v1/vehicle/alarm</code>.</li>
-            </ul>
+            <!-- ═══════════════════════════════════════════════════════
+                 2. PREREQUISITOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>2. Prerequisitos</h2>
 
-            <h2>4. Sincronización de Biometría Facial</h2>
-            <p>Limen envía las selfies de las visitas directamente a la base de datos de rostros de HikCentral. Al ser aprobado en Limen, el rostro se propaga a los terminales de la serie MinMoe en menos de 10 segundos.</p>
+            <ol style="line-height: 2.2;">
+                <li>
+                    <strong>Dispositivo Hikvision con módulo ACS habilitado.</strong>
+                    La serie DS-K2xxx (controladoras de acceso) tiene ISAPI nativo.
+                    En NVRs/DVRs, verificar que el firmware tenga el módulo Access Control activo.
+                </li>
+                <li>
+                    <strong>Firmware compatible.</strong>
+                    ISAPI v2.0+ (firmware ≥ V1.5 en la mayoría de DS-K series).
+                    En la interfaz web del dispositivo: Mantenimiento → Información del Dispositivo → versión de firmware.
+                </li>
+                <li>
+                    <strong>Acceso de red desde el servidor Limen al dispositivo.</strong>
+                    El servidor donde corre Limen debe poder alcanzar la IP del dispositivo en el puerto 80/443 (HTTP/HTTPS).
+                    Si el dispositivo está en otra VLAN, verificar ACLs de red.
+                </li>
+                <li>
+                    <strong>Usuario con permisos de Remote Control y Access Control.</strong>
+                    No es necesario usar <code>admin</code>; se puede crear un usuario dedicado <code>limen</code> con solo los permisos necesarios:
+                    <em>Remote Control</em> (apertura remota) y <em>Access Control</em> (gestión de usuarios).
+                </li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 3. HABILITAR ISAPI EN EL DISPOSITIVO
+            ═══════════════════════════════════════════════════════ -->
+            <h2>3. Habilitar ISAPI en el dispositivo</h2>
+
+            <p>La mayoría de dispositivos Hikvision tienen ISAPI habilitado por defecto. Para verificar y habilitar:</p>
+
+            <h3>Vía interfaz web del dispositivo</h3>
+            <ol>
+                <li>Acceder a <code>http://&lt;IP-del-dispositivo&gt;</code> en el navegador</li>
+                <li>Ir a <strong>Configuración → Red → Configuración avanzada → Integración</strong></li>
+                <li>Activar <strong>ISAPI</strong> si no está marcado</li>
+                <li>Guardar y reiniciar si se modificó</li>
+            </ol>
+
+            <h3>Vía iVMS-4200 (software de gestión local)</h3>
+            <ol>
+                <li>Seleccionar el dispositivo → Configuración remota</li>
+                <li>Red → Configuración avanzada → Activar ISAPI</li>
+            </ol>
+
+            <div class="example-box">
+                💡 <strong>Tip:</strong> Verificar que ISAPI responde antes de configurar en Limen:
+                <pre>curl -u admin:TuContraseña --digest http://192.168.1.64/ISAPI/System/deviceInfo</pre>
+                Si devuelve un JSON o XML con información del dispositivo, ISAPI está activo y las credenciales son correctas.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 4. CONFIGURAR EN LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>4. Configurar en Limen</h2>
+
+            <ol style="line-height: 2.4;">
+                <li>
+                    Ir a <strong>Administración → Integraciones</strong> en Limen
+                </li>
+                <li>
+                    En la tarjeta <strong>Control de Acceso Físico</strong>, seleccionar proveedor <strong>Hikvision ISAPI</strong>
+                </li>
+                <li>
+                    Completar los campos:
+                    <table class="field-table" style="margin-top: 0.7rem;">
+                        <thead>
+                            <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>URL Base</strong></td>
+                                <td>
+                                    IP o hostname del dispositivo Hikvision.
+                                    Si el dispositivo usa HTTPS con certificado auto-firmado, usa <code>https://</code>
+                                    (Limen acepta certificados auto-firmados en modo dispositivo).
+                                </td>
+                                <td>
+                                    <code>http://192.168.1.64</code><br>
+                                    <code>https://hik.empresa.local</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Usuario</strong></td>
+                                <td>
+                                    Usuario del dispositivo (admin u otro con permisos de AC).
+                                    <strong>No</strong> es un AppKey de HikCentral.
+                                </td>
+                                <td><code>admin</code> o <code>limen</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contraseña</strong></td>
+                                <td>
+                                    Contraseña del usuario del dispositivo.
+                                    Se cifra con DataProtection antes de persistir.
+                                </td>
+                                <td><code>Admin1234!</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </li>
+                <li>
+                    Hacer clic en <strong>Probar conexión</strong> para verificar que las credenciales son válidas
+                </li>
+                <li>
+                    Hacer clic en <strong>Guardar</strong>
+                </li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 5. ENDPOINTS ISAPI IMPLEMENTADOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>5. Endpoints ISAPI Implementados</h2>
+
+            <p>Esta es la tabla exacta de qué endpoint ISAPI usa cada método de Limen:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Método Limen</th><th>Método HTTP</th><th>Endpoint ISAPI</th><th>Notas</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>SyncPersonAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/ISAPI/AccessControl/UserInfo/Record?format=json</code></td>
+                        <td>
+                            Crea o actualiza la persona. Si el <code>employeeNo</code> ya existe, lo actualiza.
+                            Si se provee foto, se hace una segunda llamada a <code>/ISAPI/Intelligent/FDLib/FaceDataRecord</code>
+                            (no crítico; si el dispositivo no tiene reconocimiento facial, no falla).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>BlockUserAsync</code></td>
+                        <td><code>PUT</code></td>
+                        <td><code>/ISAPI/AccessControl/UserInfo/SetUp?format=json</code></td>
+                        <td>
+                            Establece <code>Valid.enable = false</code>. Intento alternativo con
+                            <code>/ISAPI/AccessControl/UserInfo/Modify</code> si SetUp falla (compatibilidad con firmware antiguo).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>UnblockUserAsync</code></td>
+                        <td><code>PUT</code></td>
+                        <td><code>/ISAPI/AccessControl/UserInfo/SetUp?format=json</code></td>
+                        <td>Establece <code>Valid.enable = true</code>. Mismo fallback.</td>
+                    </tr>
+                    <tr>
+                        <td><code>AssignAccessProfileAsync</code></td>
+                        <td><code>PUT</code></td>
+                        <td><code>/ISAPI/AccessControl/UserInfo/SetUp?format=json</code></td>
+                        <td>
+                            El <code>profileName</code> se interpreta como <code>planTemplateNo</code> numérico.
+                            Si no es numérico, se usa <code>"1"</code> (plan por defecto).
+                            Los planes de acceso deben estar pre-configurados en el dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>RemoteOpenDoorAsync</code></td>
+                        <td><code>PUT</code></td>
+                        <td><code>/ISAPI/AccessControl/RemoteControl/door/{doorNo}</code></td>
+                        <td>
+                            Body XML: <code>&lt;RemoteControlDoor&gt;&lt;cmd&gt;open&lt;/cmd&gt;&lt;/RemoteControlDoor&gt;</code>.
+                            El <code>doorHardwareId</code> debe ser el número de puerta (entero, empieza en 1).
+                            Este es el único endpoint que usa XML en lugar de JSON.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>RegisterVehiclePlateAsync</code></td>
+                        <td><code>PUT</code></td>
+                        <td><code>/ISAPI/AccessControl/UserInfo/SetUp?format=json</code></td>
+                        <td>
+                            Usa el campo <code>vehicleList</code> dentro de <code>UserInfo</code>. Solo soportado
+                            en dispositivos DS-K2 series y algunos DS-K1 series con firmware reciente.
+                            En dispositivos sin soporte devuelve error no crítico (se registra warning en logs, no falla la operación).
+                            Para LPR completo se recomienda configurar la lista blanca directamente en el dispositivo
+                            o usar HikCentral.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>GetAccessEventsAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/ISAPI/AccessControl/AcsEvent?format=json</code></td>
+                        <td>
+                            Paginado interno (50 eventos por página). Máximo 1000 eventos por llamada.
+                            Filtra por rango de tiempo con <code>startTime</code>/<code>endTime</code> en ISO 8601.
+                            <code>majorEventType=5</code> = evento de control de acceso;
+                            <code>subEventType=75</code> = acceso concedido, <code>76</code> = denegado, <code>35</code> = salida local.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>GetHardwareDoorsAsync</code></td>
+                        <td><code>GET</code></td>
+                        <td>
+                            <code>/ISAPI/AccessControl/Door/param?format=json</code> (intento 1)<br>
+                            <code>/ISAPI/AccessControl/capabilities?format=json</code> + iteración (fallback)
+                        </td>
+                        <td>
+                            Primero intenta obtener la lista completa. Si ese endpoint no existe en el firmware,
+                            consulta las capacidades del dispositivo para saber cuántas puertas tiene
+                            y las itera individualmente con <code>GET /ISAPI/AccessControl/Door/param/{doorNo}</code>.
+                            Si tampoco hay capabilities, itera sobre 4 puertas como default conservador.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 6. MAPEO DE PUERTAS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>6. Mapeo de Puertas (HardwareId)</h2>
+
+            <p>
+                En Limen, cada puerta tiene un campo <strong>Hardware ID</strong> que es el identificador
+                en el sistema de control de acceso físico. Para Hikvision ISAPI, ese ID debe ser el
+                <strong>número de puerta entero</strong> (1, 2, 3...) como está configurado en el dispositivo.
+            </p>
+
+            <h3>¿Cómo saber el número de cada puerta?</h3>
+            <ol>
+                <li>
+                    En Limen: ir a <strong>Administración → Puertas → Importar desde hardware</strong>.
+                    Limen consulta el dispositivo con <code>GetHardwareDoorsAsync</code> y lista las puertas
+                    disponibles con su número y nombre para que las mapees a las zonas de acceso.
+                </li>
+                <li>
+                    Alternativamente, en la interfaz web del dispositivo: <strong>Acceso → Puerta</strong>
+                    muestra la lista con los números de puerta.
+                </li>
+                <li>
+                    Vía curl para verificar directamente:
+                    <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                        curl -u admin:Contraseña --digest \<br>
+                        &nbsp;&nbsp;"http://192.168.1.64/ISAPI/AccessControl/Door/param/1?format=json"
+                    </div>
+                </li>
+            </ol>
+
+            <div class="example-box">
+                ⚠️ <strong>Importante:</strong> Para <code>RemoteOpenDoorAsync</code> el <code>doorHardwareId</code>
+                debe ser un entero ≥ 1. El string <code>"1"</code>, <code>"2"</code>, etc. Limen valida esto
+                antes de llamar al endpoint — si envías un UUID o un string no numérico, la operación falla con un
+                mensaje claro antes de hacer ninguna request al dispositivo.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 7. AUTENTICACIÓN HTTP DIGEST
+            ═══════════════════════════════════════════════════════ -->
+            <h2>7. Cómo funciona la autenticación HTTP Digest</h2>
+
+            <p>
+                ISAPI usa <strong>HTTP Digest Authentication</strong> estándar (RFC 7616).
+                A diferencia de Basic Auth, las credenciales nunca viajan en texto plano:
+                el servidor responde al primer request con un reto (<em>nonce</em>) y el cliente
+                responde con un hash MD5/SHA-256 de las credenciales + el nonce.
+            </p>
+
+            <p>
+                En .NET, <code>HttpClientHandler</code> maneja esto automáticamente cuando se le
+                configuran <code>Credentials = new NetworkCredential(user, pass)</code>.
+                Limen establece además <code>PreAuthenticate = true</code> para evitar el round-trip
+                inicial en llamadas subsecuentes (mejora de latencia en operaciones consecutivas).
+            </p>
+
+            <h3>Certificados auto-firmados</h3>
+            <p>
+                La mayoría de dispositivos Hikvision usan certificados auto-firmados cuando se configura HTTPS.
+                Limen acepta cualquier certificado de dispositivo en modo ISAPI
+                (<code>DangerousAcceptAnyServerCertificateValidator</code>).
+                En producción, lo correcto es instalar un certificado firmado por un CA corporativo
+                en el dispositivo y configurar el trust store del servidor Limen, o usar HTTP en una VLAN aislada.
+            </p>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 8. VERIFICACIÓN CON CURL
+            ═══════════════════════════════════════════════════════ -->
+            <h2>8. Verificación manual con curl</h2>
+
+            <p>Antes de configurar en Limen, verificar manualmente que las credenciales funcionan:</p>
+
+            <h3>Verificar conectividad y credenciales</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                # Información del dispositivo<br>
+                curl -u admin:Contraseña --digest \<br>
+                &nbsp;&nbsp;"http://192.168.1.64/ISAPI/System/deviceInfo?format=json"
+            </div>
+
+            <h3>Crear un usuario de prueba</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl -u admin:Contraseña --digest -X POST \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{"UserInfo":{"employeeNo":"9999","name":"Test Limen","userType":"normal","Valid":{"enable":true,"beginTime":"2000-01-01T00:00:00","endTime":"2030-12-31T23:59:59","timeType":"local"},"doorRight":"1","RightPlan":[{"doorNo":1,"planTemplateNo":"1"}]}}' \<br>
+                &nbsp;&nbsp;"http://192.168.1.64/ISAPI/AccessControl/UserInfo/Record?format=json"
+            </div>
+            <p>Respuesta esperada: <code>{"statusCode":1,"statusString":"OK",...}</code></p>
+
+            <h3>Abrir puerta 1 remotamente</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl -u admin:Contraseña --digest -X PUT \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/xml" \<br>
+                &nbsp;&nbsp;-d '&lt;RemoteControlDoor&gt;&lt;cmd&gt;open&lt;/cmd&gt;&lt;/RemoteControlDoor&gt;' \<br>
+                &nbsp;&nbsp;"http://192.168.1.64/ISAPI/AccessControl/RemoteControl/door/1"
+            </div>
+
+            <h3>Leer eventos de acceso del último día</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl -u admin:Contraseña --digest -X POST \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{"AcsEventCond":{"searchID":"1","searchResultPosition":0,"maxResults":20,"major":0,"minor":0,"startTime":"2025-05-16T00:00:00+00:00","endTime":"2025-05-17T23:59:59+00:00"}}' \<br>
+                &nbsp;&nbsp;"http://192.168.1.64/ISAPI/AccessControl/AcsEvent?format=json"
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 9. TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════ -->
+            <h2>9. Troubleshooting</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>HTTP 401 Unauthorized</td>
+                        <td>Credenciales incorrectas o usuario sin permisos ISAPI</td>
+                        <td>
+                            Verificar usuario/contraseña con curl. Confirmar que el usuario tiene rol
+                            con permisos de Remote Control. Algunos dispositivos requieren habilitar
+                            "Digest Auth" explícitamente en configuración de seguridad.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Connection refused / timeout</td>
+                        <td>Puerto bloqueado por firewall o ISAPI deshabilitado</td>
+                        <td>
+                            Verificar conectividad: <code>telnet 192.168.1.64 80</code>.
+                            Verificar que ISAPI está habilitado en Configuración → Red → Integración.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>statusCode: 5</code> (error de formato)</td>
+                        <td>El payload JSON enviado tiene un campo no reconocido por este firmware</td>
+                        <td>
+                            Revisar logs de Limen para ver el payload exacto.
+                            Algunos campos como <code>vehicleList</code> solo existen en ciertos modelos/firmwares.
+                            Actualizar firmware del dispositivo o usar una versión del payload más básica.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>statusCode: 7</code> (recurso no encontrado)</td>
+                        <td>El employeeNo no existe al intentar SetUp</td>
+                        <td>
+                            Asegurarse de llamar <code>SyncPersonAsync</code> antes de
+                            <code>BlockUserAsync</code>/<code>AssignAccessProfileAsync</code>.
+                            La persona debe existir en el dispositivo antes de poder modificarla.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>RemoteOpen retorna OK pero la puerta no abre</td>
+                        <td>El número de puerta es incorrecto, o el relé no está conectado</td>
+                        <td>
+                            Verificar que el <code>doorHardwareId</code> en Limen coincide con el número de puerta
+                            físico del dispositivo. Probar directamente con curl.
+                            Verificar estado del relé en la interfaz web del dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>GetHardwareDoors retorna lista vacía</td>
+                        <td>El endpoint de lista no existe en este firmware</td>
+                        <td>
+                            Limen intenta automáticamente el modo de iteración.
+                            Si la lista sigue vacía, el firmware puede ser muy antiguo.
+                            Agregar las puertas manualmente en Limen con el número correcto (entero desde 1).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Foto facial no se sube</td>
+                        <td>El dispositivo no tiene módulo de reconocimiento facial</td>
+                        <td>
+                            Comportamiento esperado. Solo dispositivos MinMoe y algunos DS-K1T671 soportan
+                            reconocimiento facial vía ISAPI FDLib. El acceso por tarjeta/PIN sigue funcionando normalmente.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 10. LIMITACIONES Y ROADMAP
+            ═══════════════════════════════════════════════════════ -->
+            <h2>10. Limitaciones conocidas</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Funcionalidad</th><th>Estado</th><th>Notas</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Alta y baja de personas</td>
+                        <td>✅ Implementado</td>
+                        <td>SyncPerson, Block, Unblock</td>
+                    </tr>
+                    <tr>
+                        <td>Apertura remota de puerta</td>
+                        <td>✅ Implementado</td>
+                        <td>Requiere número de puerta entero como HardwareId</td>
+                    </tr>
+                    <tr>
+                        <td>Lectura de eventos de acceso</td>
+                        <td>✅ Implementado</td>
+                        <td>Paginado hasta 1000 eventos por llamada</td>
+                    </tr>
+                    <tr>
+                        <td>Listado de puertas del dispositivo</td>
+                        <td>✅ Implementado</td>
+                        <td>Con fallback por iteración si el endpoint de lista no existe</td>
+                    </tr>
+                    <tr>
+                        <td>Sincronización de foto facial</td>
+                        <td>⚠️ Parcial</td>
+                        <td>Solo en dispositivos con FDLib (MinMoe, DS-K1T671M). En otros, se omite sin error.</td>
+                    </tr>
+                    <tr>
+                        <td>Registro de patente vehicular</td>
+                        <td>⚠️ Parcial</td>
+                        <td>Solo en DS-K2 series con campo vehicleList. Para LPR completo, configurar en dispositivo o usar HikCentral.</td>
+                    </tr>
+                    <tr>
+                        <td>Asignación de perfiles de acceso</td>
+                        <td>⚠️ Básico</td>
+                        <td>Solo por planTemplateNo numérico. Los planes de acceso deben estar pre-creados en el dispositivo; Limen no los crea.</td>
+                    </tr>
+                    <tr>
+                        <td>Webhooks / eventos en tiempo real</td>
+                        <td>❌ No implementado</td>
+                        <td>
+                            Limen usa polling periódico de AcsEvent. Hikvision ISAPI soporta eventos push vía
+                            <code>/ISAPI/Event/notification/alertStream</code> (multipart streaming) o
+                            HTTP notifications. Implementar si el cliente requiere latencia &lt;30s.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Múltiples dispositivos por tenant</td>
+                        <td>❌ No implementado</td>
+                        <td>
+                            La configuración actual es 1 dispositivo por tenant.
+                            Para multi-dispositivo (múltiples controladoras) se necesita un servidor intermedio
+                            (NVR con módulo ACS o HikCentral) que agregue todas las controladoras en un solo endpoint.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
         </div>
     </div>
 </body>
