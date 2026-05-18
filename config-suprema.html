@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Suprema BioStar 2 — Limen</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #1f2937;
+            background: #f9fafb;
+            margin: 0;
+            padding: 0;
+        }
+        .page-header {
+            background: #1F3864;
+            color: white;
+            padding: 2rem 2.5rem;
+        }
+        .page-header h1 {
+            margin: 0 0 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .page-header p {
+            margin: 0;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+        .page-header a {
+            color: #FFC107;
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+        .page-header a:hover { text-decoration: underline; }
+        .content {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 4rem;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1F3864;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 1.5rem 0 0.5rem;
+        }
+        p, li { line-height: 1.7; font-size: 0.95rem; }
+        ul, ol { padding-left: 1.5rem; }
+        li { margin-bottom: 0.35rem; }
+        code {
+            background: #f3f4f6;
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 0.85em;
+            color: #1F3864;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+        th {
+            background: #1F3864;
+            color: white;
+            padding: 0.65rem 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        tr:nth-child(even) td { background: #f9fafb; }
+        .alert {
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            font-size: 0.9rem;
+        }
+        .alert-info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+        .alert-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+        .alert-success { background: #f0fdf4; border-left: 4px solid #22c55e; color: #166534; }
+        .badge {
+            display: inline-block;
+            padding: 0.2em 0.6em;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-yellow { background: #fef9c3; color: #92400e; }
+        .step-list { counter-reset: steps; list-style: none; padding: 0; }
+        .step-list li {
+            counter-increment: steps;
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            align-items: flex-start;
+        }
+        .step-list li::before {
+            content: counter(steps);
+            background: #1F3864;
+            color: white;
+            min-width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        .toc {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0 2rem;
+        }
+        .toc h3 { margin: 0 0 0.75rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+        .toc ol { margin: 0; padding-left: 1.25rem; }
+        .toc li { margin-bottom: 0.25rem; }
+        .toc a { color: #1F3864; text-decoration: none; font-size: 0.9rem; }
+        .toc a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Configurar Suprema BioStar 2</h1>
+    <p>Guía de integración con la plataforma de control de acceso BioStar 2 de Suprema.</p>
+    <a href="/tutorial/config-index.html">← Volver al índice de tutoriales</a>
+</div>
+
+<div class="content">
+
+    <div class="toc">
+        <h3>Contenido</h3>
+        <ol>
+            <li><a href="#que-es">Qué es BioStar 2 y cómo lo usa Limen</a></li>
+            <li><a href="#prerequisitos">Prerequisitos</a></li>
+            <li><a href="#usuario">Crear usuario de integración en BioStar 2</a></li>
+            <li><a href="#habilitar-api">Habilitar la API REST en BioStar 2</a></li>
+            <li><a href="#configurar-limen">Configurar en Limen</a></li>
+            <li><a href="#endpoints">Endpoints implementados</a></li>
+            <li><a href="#puertas">Mapeo de puertas</a></li>
+            <li><a href="#autenticacion">Cómo funciona la autenticación</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#limitaciones">Limitaciones conocidas</a></li>
+        </ol>
+    </div>
+
+    <!-- ── 1. Qué es BioStar 2 ── -->
+    <h2 id="que-es">1. Qué es BioStar 2 y cómo lo usa Limen</h2>
+    <p>
+        <strong>Suprema BioStar 2</strong> es una plataforma de gestión de control de acceso y tiempo/asistencia
+        de la empresa coreana Suprema. Se instala on-premise en un servidor del cliente y gestiona
+        dispositivos de la familia Suprema (BioEntry, BioStation, FaceStation, etc.).
+    </p>
+    <p>
+        Limen se integra con BioStar 2 a través de su <strong>REST API local</strong> expuesta por el servidor
+        BioStar 2. Limen actúa como cliente de la API — consulta puertas, sincroniza personas,
+        bloquea/desbloquea credenciales y descarga eventos de acceso. No reemplaza a BioStar 2;
+        lo complementa con portales de autogestión, flujos de aprobación y dashboards.
+    </p>
+
+    <div class="alert alert-info">
+        <strong>Nota:</strong> Limen usa la API REST interna de BioStar 2 (la misma que usa el cliente web de
+        BioStar 2). No requiere ningún SDK ni plugin adicional de Suprema.
+    </div>
+
+    <!-- ── 2. Prerequisitos ── -->
+    <h2 id="prerequisitos">2. Prerequisitos</h2>
+    <ul>
+        <li><strong>BioStar 2 versión 2.8 o superior</strong> (la API REST está disponible desde v2.x; se recomienda v2.8+ para mayor estabilidad).</li>
+        <li>Servidor BioStar 2 accesible desde la red donde corre Limen (mismo segmento LAN o VPN). Puerto por defecto: <code>443</code> (HTTPS).</li>
+        <li>Licencia de BioStar 2 activa. La API REST no requiere licencia adicional — viene incluida con la licencia base.</li>
+        <li>Usuario administrador de BioStar 2 con permisos suficientes (ver sección 3).</li>
+        <li>El servicio <strong>"API Server"</strong> de BioStar 2 debe estar habilitado (ver sección 4).</li>
+    </ul>
+
+    <div class="alert alert-warning">
+        <strong>Certificado SSL:</strong> La mayoría de las instalaciones de BioStar 2 on-premise usan un
+        certificado auto-firmado. Limen acepta certificados auto-firmados en la comunicación con BioStar 2.
+        Para producción, se recomienda instalar un certificado de una CA reconocida en el servidor BioStar 2.
+    </div>
+
+    <!-- ── 3. Crear usuario ── -->
+    <h2 id="usuario">3. Crear usuario de integración en BioStar 2</h2>
+    <p>
+        Se recomienda crear un usuario dedicado para la integración con Limen en lugar de usar el
+        usuario <code>admin</code> principal, para facilitar la auditoría y el control de acceso.
+    </p>
+    <ol class="step-list">
+        <li>
+            Inicia sesión en BioStar 2 con el usuario administrador principal
+            (normalmente en <code>https://&lt;ip-servidor&gt;</code>).
+        </li>
+        <li>
+            Ve a <strong>Settings → Accounts → Administrator</strong>.
+        </li>
+        <li>
+            Haz clic en <strong>Add</strong> para crear un nuevo administrador.
+        </li>
+        <li>
+            Completa los campos:
+            <ul>
+                <li><strong>Login ID:</strong> p. ej. <code>limen-integration</code></li>
+                <li><strong>Password:</strong> usa una contraseña robusta (mínimo 12 caracteres, mezcla de letras, números y símbolos).</li>
+                <li><strong>Operator Level:</strong> selecciona <code>Administrator</code> o crea un nivel personalizado con los permisos que se detallan abajo.</li>
+            </ul>
+        </li>
+        <li>Guarda el usuario.</li>
+    </ol>
+
+    <h3>Permisos mínimos necesarios</h3>
+    <p>Si prefieres crear un Operator Level personalizado (recomendado), necesitas al menos:</p>
+    <table>
+        <thead>
+            <tr><th>Módulo</th><th>Permiso mínimo</th><th>Para qué lo usa Limen</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>User Management</td><td>Read + Write</td><td>Crear/actualizar/deshabilitar personas</td></tr>
+            <tr><td>Door</td><td>Read + Control</td><td>Listar puertas + apertura remota</td></tr>
+            <tr><td>Access Group</td><td>Read</td><td>Resolver nombres de grupos de acceso</td></tr>
+            <tr><td>Event</td><td>Read</td><td>Descargar eventos de acceso</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ── 4. Habilitar API ── -->
+    <h2 id="habilitar-api">4. Habilitar la API REST en BioStar 2</h2>
+    <p>BioStar 2 tiene un servicio de API que debe estar activo para que Limen pueda comunicarse con él.</p>
+    <ol class="step-list">
+        <li>En BioStar 2, ve a <strong>Settings → Server</strong>.</li>
+        <li>Busca la sección <strong>"API Server"</strong> o <strong>"HTTP API"</strong>.</li>
+        <li>Activa la opción <strong>Enable</strong> si no está activa.</li>
+        <li>Verifica el puerto configurado (por defecto <code>443</code> para HTTPS o <code>80</code> para HTTP). Se recomienda HTTPS.</li>
+        <li>Guarda los cambios y reinicia el servicio de BioStar 2 si el sistema lo solicita.</li>
+    </ol>
+
+    <div class="alert alert-info">
+        <strong>Verificación rápida:</strong> abre un navegador y navega a
+        <code>https://&lt;ip-servidor&gt;/api/login</code>.
+        Deberías ver un error HTTP 405 (Method Not Allowed) o una respuesta JSON vacía —
+        eso confirma que el API Server está activo. Si ves "página no encontrada", el servicio
+        no está habilitado o el puerto es distinto.
+    </div>
+
+    <!-- ── 5. Configurar en Limen ── -->
+    <h2 id="configurar-limen">5. Configurar en Limen</h2>
+    <p>
+        En Limen, ve a <strong>Administración → Integraciones</strong> y en la sección
+        <em>Control de Acceso Físico</em> selecciona el proveedor <strong>Suprema BioStar 2</strong>.
+    </p>
+    <table>
+        <thead>
+            <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>URL Base</strong></td>
+                <td>Dirección completa del servidor BioStar 2, incluyendo esquema (https://) y sin barra al final.</td>
+                <td><code>https://192.168.1.100</code></td>
+            </tr>
+            <tr>
+                <td><strong>Usuario</strong></td>
+                <td>Login ID del usuario de integración creado en el paso 3.</td>
+                <td><code>limen-integration</code></td>
+            </tr>
+            <tr>
+                <td><strong>Contraseña</strong></td>
+                <td>Contraseña del usuario de integración.</td>
+                <td>—</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert alert-warning">
+        <strong>Seguridad:</strong> Las credenciales se cifran con AES-256 (DataProtection de .NET)
+        antes de almacenarse en la base de datos de Limen. Nunca se guardan en texto plano ni aparecen
+        en los logs. Una vez guardadas, el campo contraseña muestra <code>••••••••</code>; para
+        cambiarla debes ingresar el nuevo valor y guardar nuevamente.
+    </div>
+
+    <!-- ── 6. Endpoints implementados ── -->
+    <h2 id="endpoints">6. Endpoints implementados</h2>
+    <table>
+        <thead>
+            <tr><th>Operación en Limen</th><th>Método</th><th>Endpoint BioStar 2</th><th>Notas</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Login / Autenticación</td>
+                <td><code>POST</code></td>
+                <td><code>/api/login</code></td>
+                <td>Se ejecuta automáticamente. Session_id cacheado 50 min.</td>
+            </tr>
+            <tr>
+                <td>Buscar usuario por PIN</td>
+                <td><code>GET</code></td>
+                <td><code>/api/users?searchConditions=...</code></td>
+                <td>Para obtener el ID interno antes de PUT/DELETE.</td>
+            </tr>
+            <tr>
+                <td>Crear persona</td>
+                <td><code>POST</code></td>
+                <td><code>/api/users</code></td>
+                <td>Si no existe por user_id.</td>
+            </tr>
+            <tr>
+                <td>Actualizar persona</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/users/{id}</code></td>
+                <td>Si ya existe. Usa el ID interno numérico.</td>
+            </tr>
+            <tr>
+                <td>Subir foto</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/users/{userId}/photo</code></td>
+                <td>Operación no crítica: si falla, no revierte el alta.</td>
+            </tr>
+            <tr>
+                <td>Bloquear usuario</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/users/{id}</code></td>
+                <td>Setea <code>disabled: true</code>.</td>
+            </tr>
+            <tr>
+                <td>Desbloquear usuario</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/users/{id}</code></td>
+                <td>Setea <code>disabled: false</code>.</td>
+            </tr>
+            <tr>
+                <td>Asignar perfil de acceso</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/users/{id}</code></td>
+                <td>Setea <code>access_groups</code>. Si el nombre no es numérico, busca por nombre en <code>/api/access_groups</code>.</td>
+            </tr>
+            <tr>
+                <td>Lista de grupos de acceso</td>
+                <td><code>GET</code></td>
+                <td><code>/api/access_groups</code></td>
+                <td>Para resolver nombre → ID al asignar perfil.</td>
+            </tr>
+            <tr>
+                <td>Apertura remota de puerta</td>
+                <td><code>PUT</code></td>
+                <td><code>/api/doors/{id}/open</code></td>
+                <td>Fallback: <code>POST /api/door_groups/0/doors/open</code> si el primero da 404.</td>
+            </tr>
+            <tr>
+                <td>Listar puertas</td>
+                <td><code>GET</code></td>
+                <td><code>/api/doors?limit=100&amp;offset=0</code></td>
+                <td>Con paginación automática si hay más de 100 puertas.</td>
+            </tr>
+            <tr>
+                <td>Descargar eventos de acceso</td>
+                <td><code>GET</code></td>
+                <td><code>/api/events?start_datetime=...&amp;end_datetime=...&amp;limit=500&amp;offset=0</code></td>
+                <td>Con paginación. Timestamps en formato <code>yyyyMMddHHmmss</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── 7. Mapeo de puertas ── -->
+    <h2 id="puertas">7. Mapeo de puertas</h2>
+    <p>
+        En Limen, las puertas se identifican por su <strong>Hardware ID</strong>, que en BioStar 2
+        corresponde al campo <code>id</code> de cada puerta (un número entero asignado por BioStar 2).
+    </p>
+    <h3>Cómo obtener el ID de una puerta en BioStar 2</h3>
+    <ol class="step-list">
+        <li>
+            En Limen, ve a <strong>Administración → Puertas</strong> y usa el botón
+            <strong>"Importar desde hardware"</strong>. Limen listará todas las puertas con su ID.
+        </li>
+        <li>
+            Alternativamente, en BioStar 2 ve a <strong>Device → Door</strong> y selecciona una puerta.
+            La URL del navegador mostrará el ID: <code>/door/edit/<strong>42</strong></code>.
+        </li>
+        <li>
+            También puedes consultarlo directamente via API:
+            <pre>GET https://&lt;ip-servidor&gt;/api/doors?limit=100&amp;offset=0
+Header: bs-session-id: {tu-session-id}</pre>
+            La respuesta incluye el <code>id</code> de cada puerta.
+        </li>
+    </ol>
+
+    <!-- ── 8. Autenticación ── -->
+    <h2 id="autenticacion">8. Cómo funciona la autenticación</h2>
+    <p>BioStar 2 usa autenticación basada en sesión con un token llamado <code>bs-session-id</code>:</p>
+    <ol>
+        <li>Limen llama a <code>POST /api/login</code> con usuario y contraseña.</li>
+        <li>BioStar 2 responde con un <code>session_id</code> en el body JSON (<code>User.session_id</code>)
+            y también en el header <code>Set-Cookie: bs-session-id=...</code>.</li>
+        <li>Limen cachea el <code>session_id</code> en memoria con TTL de <strong>50 minutos</strong>
+            (las sesiones de BioStar 2 expiran a los 60 min por defecto).</li>
+        <li>Todas las requests siguientes incluyen el header <code>bs-session-id: {session_id}</code>.</li>
+        <li>Si el servidor responde con HTTP 401 (sesión expirada), Limen limpia el cache y
+            re-autentica automáticamente <strong>una sola vez</strong>.</li>
+    </ol>
+
+    <div class="alert alert-info">
+        <strong>Sin estado en el servidor:</strong> El cache del session_id vive en la memoria del proceso
+        Limen. Si Limen se reinicia, el próximo request al hardware BioStar 2 realizará un nuevo login
+        automáticamente.
+    </div>
+
+    <!-- ── 9. Troubleshooting ── -->
+    <h2 id="troubleshooting">9. Troubleshooting</h2>
+    <table>
+        <thead>
+            <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Logs: <em>"Login falló: HTTP 401"</em></td>
+                <td>Credenciales incorrectas</td>
+                <td>Verifica usuario y contraseña en BioStar 2 → Settings → Accounts.</td>
+            </tr>
+            <tr>
+                <td>Logs: <em>"Login falló: HTTP 404"</em></td>
+                <td>La API no está habilitada o la URL base es incorrecta</td>
+                <td>Verifica la URL y que API Server esté activo en BioStar 2 → Settings → Server.</td>
+            </tr>
+            <tr>
+                <td>Timeout en login</td>
+                <td>Servidor no accesible (red, firewall)</td>
+                <td>Comprueba conectividad: <code>ping &lt;ip-servidor&gt;</code> y que el puerto 443 esté abierto.</td>
+            </tr>
+            <tr>
+                <td>Error SSL / certificado</td>
+                <td>Certificado auto-firmado</td>
+                <td>Limen acepta certificados auto-firmados por defecto. Si persiste, revisa que la URL comience con <code>https://</code> y que el servidor esté accesible.</td>
+            </tr>
+            <tr>
+                <td>Logs: <em>"Login exitoso pero no se obtuvo session_id"</em></td>
+                <td>Versión muy antigua de BioStar 2 con formato de respuesta distinto</td>
+                <td>Actualiza BioStar 2 a v2.8+. Contacta a soporte Limen si el problema persiste.</td>
+            </tr>
+            <tr>
+                <td>Logs: <em>"usuario PIN X no encontrado en BioStar 2"</em> en BlockUser</td>
+                <td>El usuario no fue sincronizado previamente a BioStar 2</td>
+                <td>Ejecuta primero SyncPerson para el usuario. En el flujo normal de Limen, la sincronización ocurre al onboardear a la persona.</td>
+            </tr>
+            <tr>
+                <td>Apertura remota de puerta falla con 404</td>
+                <td>Versión de BioStar 2 que usa endpoint alternativo</td>
+                <td>Limen prueba automáticamente el endpoint de fallback. Si ambos fallan, verifica que el ID de puerta sea correcto y que el usuario tenga permiso "Door Control".</td>
+            </tr>
+            <tr>
+                <td>No llegan eventos de acceso</td>
+                <td>El rango de fechas no retorna datos o formato incorrecto</td>
+                <td>Verifica en BioStar 2 → Monitoring → Event Log que haya eventos en el período consultado. Revisa que el timezone del servidor BioStar 2 esté configurado correctamente.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── 10. Limitaciones ── -->
+    <h2 id="limitaciones">10. Limitaciones conocidas</h2>
+
+    <table>
+        <thead>
+            <tr><th>Funcionalidad</th><th>Estado</th><th>Alternativa</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Registro de patentes LPR</td>
+                <td><span class="badge badge-red">No disponible</span></td>
+                <td>
+                    La API REST local de BioStar 2 no incluye endpoints de LPR.
+                    Para LPR con hardware Suprema, se requiere integración con el
+                    módulo <em>Suprema LPR</em> o con un sistema LPR externo.
+                    Limen registra un warning en logs y continúa sin error.
+                </td>
+            </tr>
+            <tr>
+                <td>Enrolamiento de huella dactilar / iris</td>
+                <td><span class="badge badge-red">No disponible</span></td>
+                <td>
+                    La API REST de BioStar 2 no permite enrolar datos biométricos remotamente
+                    por razones de seguridad. El enrolamiento debe hacerse desde el dispositivo
+                    físico o desde la UI de BioStar 2.
+                </td>
+            </tr>
+            <tr>
+                <td>Push de eventos en tiempo real</td>
+                <td><span class="badge badge-yellow">Polling</span></td>
+                <td>
+                    Limen usa polling cada 30 segundos para descargar eventos nuevos.
+                    BioStar 2 soporta webhooks/callbacks en versiones más recientes;
+                    esta funcionalidad está planificada para una versión futura de Limen.
+                </td>
+            </tr>
+            <tr>
+                <td>Gestión de tarjetas de acceso</td>
+                <td><span class="badge badge-yellow">Parcial</span></td>
+                <td>
+                    Limen gestiona las credenciales lógicas (habilitado/deshabilitado, grupos de acceso)
+                    pero no emite ni revoca tarjetas físicas. La gestión de tarjetas se hace desde
+                    la UI de BioStar 2.
+                </td>
+            </tr>
+            <tr>
+                <td>Multi-servidor BioStar 2</td>
+                <td><span class="badge badge-yellow">Uno por tenant</span></td>
+                <td>
+                    Cada tenant de Limen se conecta a un único servidor BioStar 2.
+                    Si el cliente tiene varios servidores BioStar 2 independientes, se puede
+                    configurar uno por tenant en Limen. Contacta a soporte para este escenario.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert alert-success" style="margin-top: 2.5rem;">
+        <strong>¿Todo configurado?</strong> Regresa a <strong>Administración → Integraciones</strong>
+        en Limen, ingresa las credenciales y haz clic en <strong>"Probar conexión"</strong>
+        para verificar que la integración funciona correctamente.
+    </div>
+
+</div>
+</body>
+</html>

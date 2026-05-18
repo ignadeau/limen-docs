@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limen - Integración Dahua Access Control</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="animate-in">
+    <header>
+        <img src="assets/logo-limen.png" alt="Limen Logo" class="header-logo">
+        <h1>DAHUA</h1>
+        <p>Control de Acceso vía CGI Interface — Configuración y Referencia Técnica</p>
+    </header>
+
+    <div class="container">
+        <div class="main-card">
+            <a href="config-index.html" class="back-link">← Volver al Índice Técnico</a>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 1. QUÉ ES LA API CGI DE DAHUA Y PARA QUÉ LA USA LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>1. Qué es la API CGI de Dahua y para qué la usa Limen</h2>
+
+            <p>
+                Dahua dispone de dos interfaces de programación para sus dispositivos de control de acceso:
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>API</th><th>Descripción</th><th>¿La usa Limen?</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CGI Interface</strong><br>(<code>/cgi-bin/</code>)</td>
+                        <td>
+                            API HTTP/HTTPS embebida directamente en el firmware de cada dispositivo.
+                            Compatible con casi toda la gama de hardware Dahua con módulo de control de acceso.
+                            Autenticación HTTP Digest estándar (RFC 7616).
+                            No requiere software adicional — solo acceso de red al dispositivo.
+                        </td>
+                        <td>✅ <strong>Sí</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHOP / DSHAPI</strong></td>
+                        <td>
+                            API de nivel superior disponible en algunos modelos recientes con Android embebido
+                            (serie X y modelos premium). Más funcionalidades, pero no universal.
+                            Requiere firmware específico.
+                        </td>
+                        <td>❌ No (no universal)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DSS / Smart PSS API</strong></td>
+                        <td>
+                            API del software de gestión centralizada DSS Professional.
+                            Análoga a HikCentral — para instalaciones con servidor de gestión dedicado.
+                        </td>
+                        <td>❌ No (requiere servidor DSS)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box">
+                💡 <strong>Por qué CGI:</strong> La interfaz CGI de Dahua es el equivalente exacto de ISAPI en Hikvision —
+                está embebida en el firmware, usa HTTP Digest, y es compatible con toda la gama de hardware AC.
+                Limen usa la misma estrategia en ambos proveedores: sin software intermedio, directo al dispositivo.
+            </div>
+
+            <p>
+                Limen usa la CGI para las siguientes operaciones sobre el dispositivo Dahua:
+            </p>
+            <ul style="line-height: 2;">
+                <li>Crear y actualizar personas (empleados, contratistas, visitas) con su identificador y nombre</li>
+                <li>Bloquear y desbloquear acceso de forma inmediata (finiquito, suspensión)</li>
+                <li>Asignar perfiles de acceso a puertas específicas</li>
+                <li>Abrir remotamente una puerta desde el dashboard de Limen</li>
+                <li>Leer eventos de acceso (entradas, salidas, rechazos) para el historial y auditoría</li>
+                <li>Listar las puertas/canales disponibles en el dispositivo</li>
+                <li>Subir foto facial (en terminales ASI con cámara de reconocimiento facial)</li>
+                <li>Registrar patentes vehiculares (en modelos con módulo LPR, no crítico)</li>
+            </ul>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 2. PRODUCTOS COMPATIBLES
+            ═══════════════════════════════════════════════════════ -->
+            <h2>2. Productos compatibles</h2>
+
+            <p>La integración CGI de Limen es compatible con los siguientes dispositivos Dahua:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Serie / Modelo</th><th>Descripción</th><th>Notas</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ASI3213H</strong></td>
+                        <td>Terminal de reconocimiento facial standalone 2MP, wiegand, RS-485</td>
+                        <td>Soporta FaceInfoManager.cgi para foto facial</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ASI7213Y / ASI7213X-S2</strong></td>
+                        <td>Terminal facial PoE con lector de tarjetas y reconocimiento de temperatura</td>
+                        <td>Soporta foto facial. Firmware ≥ V2.800</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHI-ASC1204C</strong></td>
+                        <td>Controladora de acceso 4 puertas / 8 lectoras</td>
+                        <td>Sin cámara — foto facial no aplica. Canales 1–4.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHI-ASC2204C</strong></td>
+                        <td>Controladora de acceso 4 puertas con alimentación PoE</td>
+                        <td>Sin cámara. Canales 1–4.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHI-ASC2202B</strong></td>
+                        <td>Controladora standalone 2 puertas</td>
+                        <td>Sin cámara. Canales 1–2.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NVR con módulo AC</strong></td>
+                        <td>NVR serie DHI-NVR con firmware que incluye AccessControl CGI</td>
+                        <td>Verificar que el firmware incluya el módulo. No todos los NVR lo tienen.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DVKIT con firmware ≥ 2.800.X</strong></td>
+                        <td>Kits de videovigilancia con control de acceso integrado</td>
+                        <td>Verificar firmware. Funcionalidades pueden variar por modelo.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="example-box">
+                ⚠️ <strong>Cómo verificar compatibilidad:</strong> El dispositivo es compatible si responde a:
+                <pre>curl --digest -u admin:contraseña \
+  "http://192.168.1.108/cgi-bin/magicBox.cgi?action=getSystemInfo"</pre>
+                Si devuelve información del sistema (modelo, firmware, número de serie), la CGI está activa y el dispositivo es compatible.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 3. PREREQUISITOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>3. Prerequisitos</h2>
+
+            <ol style="line-height: 2.2;">
+                <li>
+                    <strong>Firmware compatible.</strong>
+                    La interfaz CGI de control de acceso requiere firmware ≥ V2.600.X en la mayoría de modelos.
+                    Verificar en la interfaz web del dispositivo: <strong>Sistema → Información del sistema → Versión de software</strong>.
+                </li>
+                <li>
+                    <strong>CGI habilitado.</strong>
+                    En dispositivos recientes está habilitado por defecto.
+                    Si no responde, verificar en <strong>Configuración → Red → Servicio → CGI</strong>.
+                </li>
+                <li>
+                    <strong>Acceso de red desde el servidor Limen al dispositivo.</strong>
+                    El servidor donde corre Limen debe poder alcanzar la IP del dispositivo en el puerto 80 (HTTP) o 443 (HTTPS).
+                    Si el dispositivo está en otra VLAN, verificar ACLs de red.
+                </li>
+                <li>
+                    <strong>Usuario con permisos de Access Control Management y Control Remoto.</strong>
+                    No es necesario usar <code>admin</code>; se puede crear un usuario dedicado <code>limen</code> con solo los permisos necesarios.
+                    En la interfaz web del dispositivo: <strong>Sistema → Cuenta → Agregar usuario</strong>.
+                    Marcar los grupos: <em>Control de acceso</em> y <em>Control remoto</em>.
+                </li>
+                <li>
+                    <strong>HTTPS recomendado en producción.</strong>
+                    Si el dispositivo usa HTTPS con certificado auto-firmado, Limen lo acepta
+                    (igual que Hikvision). Usar la URL con <code>https://</code>.
+                </li>
+            </ol>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 4. HABILITAR LA API CGI EN EL DISPOSITIVO
+            ═══════════════════════════════════════════════════════ -->
+            <h2>4. Habilitar la API CGI en el dispositivo</h2>
+
+            <p>En la mayoría de dispositivos Dahua la CGI está habilitada por defecto. Para verificar y activar:</p>
+
+            <h3>Vía interfaz web del dispositivo</h3>
+            <ol>
+                <li>Acceder a <code>http://&lt;IP-del-dispositivo&gt;</code> en el navegador</li>
+                <li>Ir a <strong>Configuración → Red → Conexión</strong> (o <strong>Servicio</strong> según el firmware)</li>
+                <li>Verificar que <strong>CGI</strong> o <strong>Web Service</strong> está habilitado</li>
+                <li>Guardar y reiniciar si se modificó algún parámetro</li>
+            </ol>
+
+            <h3>Vía Smart PSS (software de gestión local)</h3>
+            <ol>
+                <li>Seleccionar el dispositivo → Configuración remota → Red → Servicios</li>
+                <li>Verificar que CGI está marcado como activo</li>
+            </ol>
+
+            <div class="example-box">
+                💡 <strong>Verificar con curl antes de configurar en Limen:</strong>
+                <pre>curl --digest -u admin:Contraseña \
+  "http://192.168.1.108/cgi-bin/magicBox.cgi?action=getSystemInfo"</pre>
+                Respuesta esperada: líneas <code>key=value</code> con modelo, firmware y número de serie.
+                Si responde, la API CGI está activa y las credenciales son correctas.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 5. CONFIGURAR EN LIMEN
+            ═══════════════════════════════════════════════════════ -->
+            <h2>5. Configurar en Limen</h2>
+
+            <ol style="line-height: 2.4;">
+                <li>
+                    Ir a <strong>Administración → Integraciones</strong> en Limen
+                </li>
+                <li>
+                    En la tarjeta <strong>Control de Acceso Físico</strong>, seleccionar proveedor <strong>Dahua Access Control</strong>
+                </li>
+                <li>
+                    Completar los campos:
+                    <table class="field-table" style="margin-top: 0.7rem;">
+                        <thead>
+                            <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>URL Base</strong></td>
+                                <td>
+                                    IP o hostname del dispositivo Dahua.
+                                    Si usa HTTPS con certificado auto-firmado, usa <code>https://</code>
+                                    (Limen acepta certificados auto-firmados).
+                                    <strong>Sin barra final.</strong>
+                                </td>
+                                <td>
+                                    <code>http://192.168.1.108</code><br>
+                                    <code>https://dahua.empresa.local</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Usuario</strong></td>
+                                <td>
+                                    Usuario del dispositivo con permisos de Access Control Management y Control Remoto.
+                                    Se recomienda crear un usuario dedicado <code>limen</code> en lugar de usar <code>admin</code>.
+                                </td>
+                                <td><code>admin</code> o <code>limen</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contraseña</strong></td>
+                                <td>
+                                    Contraseña del usuario del dispositivo.
+                                    Se cifra con DataProtection antes de persistir en la base de datos.
+                                    Nunca se muestra nuevamente después de guardar.
+                                </td>
+                                <td><code>Admin1234!</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </li>
+                <li>
+                    Hacer clic en <strong>Probar conexión</strong> para verificar que las credenciales son válidas
+                </li>
+                <li>
+                    Hacer clic en <strong>Guardar</strong>
+                </li>
+            </ol>
+
+            <div class="example-box">
+                💡 <strong>Diferencia con Hikvision:</strong> Los campos son idénticos (URL Base, Usuario, Contraseña)
+                porque ambos usan HTTP Digest. La diferencia es interna: Limen llama a endpoints <code>/cgi-bin/</code>
+                en lugar de <code>/ISAPI/</code>. Para el administrador, la configuración es la misma.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 6. ENDPOINTS CGI IMPLEMENTADOS
+            ═══════════════════════════════════════════════════════ -->
+            <h2>6. Endpoints CGI implementados</h2>
+
+            <p>Esta es la tabla exacta de qué endpoint CGI usa cada método de Limen:</p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Método Limen</th><th>Método HTTP</th><th>Endpoint CGI</th><th>Notas</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>SyncPersonAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td>
+                            <code>/cgi-bin/AccessControl.cgi?action=insertRecordList&amp;name=UserInfoDetail</code><br>
+                            Fallback: <code>/cgi-bin/AccessControl.cgi?action=updateRecordList&amp;name=UserInfoDetail</code>
+                        </td>
+                        <td>
+                            Crea la persona con insertRecordList.
+                            Si el userID ya existe (error de duplicado), reintenta con updateRecordList.
+                            Si se provee foto, se hace segunda llamada a FaceInfoManager.cgi (no crítico).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>BlockUserAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/AccessControl.cgi?action=updateRecordList&amp;name=UserInfoDetail</code></td>
+                        <td>
+                            Establece <code>validEnd = "2000.01.01 00:00:00"</code> (fecha pasada → no puede ingresar).
+                            Fallback: establece <code>userType = "2"</code> (lista negra en algunos modelos)
+                            si el primer intento falla.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>UnblockUserAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/AccessControl.cgi?action=updateRecordList&amp;name=UserInfoDetail</code></td>
+                        <td>
+                            Restaura <code>validEnd = "2030.12.31 23:59:59"</code> y <code>userType = "0"</code> (normal).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>AssignAccessProfileAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/AccessControl.cgi?action=updateRecordList&amp;name=UserInfoDetail</code></td>
+                        <td>
+                            El <code>profileName</code> se interpreta como ID de puerta (campo <code>doors</code>).
+                            Si no es numérico, se usa <code>0</code> (puerta por defecto).
+                            Las puertas deben estar configuradas en el dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>RemoteOpenDoorAsync</code></td>
+                        <td><code>POST</code> (+ <code>GET</code> como fallback)</td>
+                        <td><code>/cgi-bin/AccessControl.cgi?action=openDoor&amp;channel={n}</code></td>
+                        <td>
+                            El <code>doorHardwareId</code> debe ser el número de canal (entero ≥ 1).
+                            Algunos modelos responden solo a GET para este endpoint —
+                            Limen intenta POST primero y si falla HTTP-status, reintenta con GET.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>RegisterVehiclePlateAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/LPR.cgi?action=add</code></td>
+                        <td>
+                            Solo disponible en terminales con módulo LPR (ej: ITC237 series).
+                            En controladoras de acceso puro (DHI-ASC) no existe este endpoint.
+                            Si falla, Limen registra warning y retorna éxito parcial — no bloquea el flujo principal.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>GetAccessEventsAsync</code></td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/RecordFinder.cgi?action=find&amp;name=AccessControlCardRec</code></td>
+                        <td>
+                            Paginado interno con campo <code>Position</code> (100 eventos por página).
+                            Máximo 2000 eventos por llamada.
+                            Filtra por <code>StartTime</code>/<code>EndTime</code> en formato <code>yyyy-MM-dd HH:mm:ss</code> (hora local del dispositivo).
+                            Campos de evento: <code>UserID</code>, <code>UserName</code>, <code>CardNo</code>, <code>DoorID</code>,
+                            <code>Time</code>, <code>Method</code>, <code>Type</code> (0=entrada, 1=salida), <code>Status</code> (0=concedido, ≠0=denegado).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>GetHardwareDoorsAsync</code></td>
+                        <td><code>GET</code></td>
+                        <td>
+                            <code>/cgi-bin/AccessControl.cgi?action=getConfig&amp;name=DoorConfig</code> (intento 1)<br>
+                            <code>/cgi-bin/AccessControl.cgi?action=getConfig&amp;name=DoorConfig&amp;channel={n}</code> n=1..8 (fallback)
+                        </td>
+                        <td>
+                            Primero intenta la lista completa. Si no está disponible, itera los canales 1 a 8
+                            (máximo típico en controladoras Dahua). La respuesta puede estar en formato
+                            JSON o key=value propietario — Limen maneja ambos formatos.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>SyncPersonAsync</code> (foto facial)</td>
+                        <td><code>POST</code></td>
+                        <td><code>/cgi-bin/FaceInfoManager.cgi?action=add</code></td>
+                        <td>
+                            Solo en terminales ASI con cámara de reconocimiento facial.
+                            En controladoras puras (DHI-ASC) no existe este endpoint.
+                            Si falla, Limen registra warning y continúa — la persona sigue creada.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 7. MAPEO DE CANALES / PUERTAS (HARDWAREID)
+            ═══════════════════════════════════════════════════════ -->
+            <h2>7. Mapeo de canales y puertas (HardwareId)</h2>
+
+            <p>
+                En Limen, cada puerta tiene un campo <strong>Hardware ID</strong> que identifica la puerta
+                en el sistema de control de acceso físico. Para Dahua CGI, ese ID debe ser el
+                <strong>número de canal entero</strong> (1, 2, 3...) como está configurado en el dispositivo.
+            </p>
+
+            <h3>Numeración de canales en Dahua</h3>
+            <p>
+                A diferencia de algunas APIs que usan índice 0 (base 0), la CGI de Dahua usa canales
+                con base 1 para la apertura remota (<code>openDoor?channel=1</code>).
+                En otros endpoints como los de configuración de puertas puede verse como índice 0 internamente,
+                pero Limen normaliza todo a base 1 para consistencia con los demás proveedores.
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Modelo</th><th>Canales disponibles</th><th>HardwareId en Limen</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>DHI-ASC1204C / DHI-ASC2204C (4 puertas)</td>
+                        <td>Canal 1, 2, 3, 4</td>
+                        <td><code>"1"</code>, <code>"2"</code>, <code>"3"</code>, <code>"4"</code></td>
+                    </tr>
+                    <tr>
+                        <td>DHI-ASC2202B (2 puertas)</td>
+                        <td>Canal 1, 2</td>
+                        <td><code>"1"</code>, <code>"2"</code></td>
+                    </tr>
+                    <tr>
+                        <td>Terminal ASI (1 puerta)</td>
+                        <td>Canal 1</td>
+                        <td><code>"1"</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>¿Cómo saber el número de cada puerta?</h3>
+            <ol>
+                <li>
+                    En Limen: ir a <strong>Administración → Puertas → Importar desde hardware</strong>.
+                    Limen consulta el dispositivo con <code>GetHardwareDoorsAsync</code> y lista los canales
+                    disponibles para que los mapees a las zonas de acceso.
+                </li>
+                <li>
+                    Alternativamente, verificar directamente con curl:
+                    <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                        curl --digest -u admin:Contraseña \<br>
+                        &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/AccessControl.cgi?action=getConfig&amp;name=DoorConfig&amp;channel=1"
+                    </div>
+                </li>
+                <li>
+                    En la interfaz web del dispositivo: <strong>Control de Acceso → Configuración de puertas</strong>
+                    muestra el listado con el número de cada puerta.
+                </li>
+            </ol>
+
+            <div class="example-box">
+                ⚠️ <strong>Importante:</strong> El <code>doorHardwareId</code> en Limen debe ser un número entero ≥ 1.
+                Si envías un UUID o un string no numérico, <code>RemoteOpenDoorAsync</code> falla con un mensaje claro
+                antes de hacer ninguna request al dispositivo.
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 8. AUTENTICACIÓN HTTP DIGEST
+            ═══════════════════════════════════════════════════════ -->
+            <h2>8. Autenticación HTTP Digest</h2>
+
+            <p>
+                La CGI de Dahua usa <strong>HTTP Digest Authentication</strong> estándar (RFC 7616),
+                exactamente igual que Hikvision ISAPI. A diferencia de Basic Auth, las credenciales
+                nunca viajan en texto plano: el dispositivo responde con un reto (<em>nonce</em>)
+                y el cliente responde con un hash MD5/SHA-256 de las credenciales + el nonce.
+            </p>
+
+            <p>
+                En .NET, <code>HttpClientHandler</code> maneja esto automáticamente cuando se le
+                configuran <code>Credentials = new NetworkCredential(user, pass)</code>.
+                Limen establece además <code>PreAuthenticate = true</code> para evitar el round-trip
+                inicial en llamadas subsecuentes (mejora de latencia en operaciones consecutivas).
+            </p>
+
+            <h3>Certificados auto-firmados</h3>
+            <p>
+                Los dispositivos Dahua en instalaciones on-premise generalmente usan certificados auto-firmados
+                cuando se configura HTTPS. Limen acepta cualquier certificado de dispositivo
+                (<code>DangerousAcceptAnyServerCertificateValidator</code>), lo que es correcto
+                en redes internas controladas.
+            </p>
+            <p>
+                En producción con requerimientos de seguridad estrictos, lo recomendado es:
+                instalar un certificado firmado por el CA corporativo en el dispositivo, o
+                usar HTTP en una VLAN aislada sin acceso externo.
+            </p>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 9. TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════ -->
+            <h2>9. Troubleshooting</h2>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>HTTP 401 Unauthorized</td>
+                        <td>Credenciales incorrectas o usuario sin permisos en el dispositivo</td>
+                        <td>
+                            Verificar usuario/contraseña con curl:
+                            <code>curl --digest -u admin:contraseña http://IP/cgi-bin/magicBox.cgi?action=getSystemInfo</code>.
+                            Confirmar que el usuario tiene grupos "Control de Acceso" y "Control Remoto"
+                            en Sistema → Cuenta del dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Connection refused / timeout</td>
+                        <td>Puerto bloqueado por firewall o CGI deshabilitado</td>
+                        <td>
+                            Verificar conectividad: <code>telnet 192.168.1.108 80</code>.
+                            Verificar que CGI está habilitado en Configuración → Red → Servicio del dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Respuesta <code>Error. Code=8</code></td>
+                        <td>El userID ya existe al intentar insertRecordList</td>
+                        <td>
+                            Comportamiento esperado. Limen reintenta automáticamente con updateRecordList.
+                            Si el error persiste en el update, verificar que el formato del userID es correcto
+                            (algunos modelos limitan a 8 caracteres numéricos).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Respuesta <code>Error. Code=4</code></td>
+                        <td>Error de parámetro — el payload JSON tiene un campo no reconocido</td>
+                        <td>
+                            Revisar logs de Limen para ver el payload exacto.
+                            Puede ocurrir si el firmware es muy antiguo. Actualizar firmware del dispositivo
+                            o reportar al soporte de Limen para ajustar el payload.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>RemoteOpen retorna OK pero la puerta no abre</td>
+                        <td>El número de canal es incorrecto, o el relé no está conectado</td>
+                        <td>
+                            Verificar que el <code>doorHardwareId</code> en Limen coincide con el canal físico
+                            del dispositivo. Probar directamente con curl (ver sección de verificación).
+                            Verificar el estado del relé en la interfaz web del dispositivo.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>GetHardwareDoors retorna lista vacía</td>
+                        <td>El endpoint de lista no responde o el formato es desconocido</td>
+                        <td>
+                            Limen intenta automáticamente la iteración por canal 1..8.
+                            Si la lista sigue vacía, agregar las puertas manualmente en
+                            Limen → Administración → Puertas con el número de canal correcto.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Foto facial no se sube</td>
+                        <td>El dispositivo no tiene módulo de reconocimiento facial o no soporta FaceInfoManager.cgi</td>
+                        <td>
+                            Comportamiento esperado en controladoras puras (DHI-ASC).
+                            Solo terminales ASI series con cámara soportan este endpoint.
+                            El acceso por tarjeta/PIN sigue funcionando normalmente.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>LPR.cgi retorna HTTP 404</td>
+                        <td>El dispositivo no tiene módulo LPR</td>
+                        <td>
+                            Comportamiento esperado en controladoras y terminales sin módulo de reconocimiento de patentes.
+                            Limen registra warning en logs y continúa. El flujo de registro de personas no se afecta.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Eventos de acceso traen timestamps incorrectos</td>
+                        <td>El dispositivo está en zona horaria diferente al servidor Limen</td>
+                        <td>
+                            La CGI de Dahua usa hora local del dispositivo en el campo <code>Time</code>.
+                            Verificar que el dispositivo tiene la zona horaria correcta:
+                            Sistema → Configuración general → Hora del sistema.
+                            Considerar sincronizar el dispositivo con un servidor NTP.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 10. DIFERENCIAS CON HIKVISION ISAPI
+            ═══════════════════════════════════════════════════════ -->
+            <h2>10. Diferencias con Hikvision ISAPI</h2>
+
+            <p>
+                Dahua CGI y Hikvision ISAPI son similares en concepto (API embebida, HTTP Digest) pero difieren
+                en los detalles de los endpoints y formatos. Esta tabla resume las diferencias clave:
+            </p>
+
+            <table class="field-table">
+                <thead>
+                    <tr><th>Aspecto</th><th>Hikvision ISAPI</th><th>Dahua CGI</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Prefijo de URLs</strong></td>
+                        <td><code>/ISAPI/AccessControl/</code></td>
+                        <td><code>/cgi-bin/AccessControl.cgi?action=...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Formato de respuesta</strong></td>
+                        <td>Siempre JSON (con <code>?format=json</code>) o XML</td>
+                        <td>JSON o texto key=value propietario según el endpoint</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Indicador de éxito</strong></td>
+                        <td><code>{"statusCode": 1, "statusString": "OK"}</code></td>
+                        <td>Texto <code>"OK"</code> o JSON <code>{"result": true}</code> o HTTP 200 sin body</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crear persona</strong></td>
+                        <td><code>POST /ISAPI/AccessControl/UserInfo/Record?format=json</code></td>
+                        <td><code>POST /cgi-bin/AccessControl.cgi?action=insertRecordList&amp;name=UserInfoDetail</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bloquear usuario</strong></td>
+                        <td>Campo <code>Valid.enable = false</code> via SetUp</td>
+                        <td>Campo <code>validEnd</code> con fecha pasada (2000.01.01) via updateRecordList</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Apertura remota</strong></td>
+                        <td><code>PUT /ISAPI/AccessControl/RemoteControl/door/{n}</code> con body XML</td>
+                        <td><code>POST /cgi-bin/AccessControl.cgi?action=openDoor&amp;channel={n}</code> sin body</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Foto facial</strong></td>
+                        <td><code>/ISAPI/Intelligent/FDLib/FaceDataRecord</code></td>
+                        <td><code>/cgi-bin/FaceInfoManager.cgi?action=add</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consulta de eventos</strong></td>
+                        <td>
+                            <code>POST /ISAPI/AccessControl/AcsEvent?format=json</code><br>
+                            Timestamps: ISO 8601 UTC
+                        </td>
+                        <td>
+                            <code>POST /cgi-bin/RecordFinder.cgi?action=find&amp;name=AccessControlCardRec</code><br>
+                            Timestamps: <code>yyyy-MM-dd HH:mm:ss</code> (hora local del dispositivo)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Listado de puertas</strong></td>
+                        <td><code>GET /ISAPI/AccessControl/Door/param?format=json</code></td>
+                        <td><code>GET /cgi-bin/AccessControl.cgi?action=getConfig&amp;name=DoorConfig</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Capacidades del dispositivo</strong></td>
+                        <td><code>GET /ISAPI/AccessControl/capabilities?format=json</code> para saber max puertas</td>
+                        <td>No hay endpoint estándar — iteración fija 1..8 como fallback</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Autenticación</strong></td>
+                        <td>HTTP Digest RFC 7616 — mismo mecanismo</td>
+                        <td>HTTP Digest RFC 7616 — mismo mecanismo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Certificados SSL</strong></td>
+                        <td>Auto-firmados aceptados (configurable)</td>
+                        <td>Auto-firmados aceptados (configurable)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 VERIFICACIÓN MANUAL
+            ═══════════════════════════════════════════════════════ -->
+            <h2>Verificación manual con curl</h2>
+
+            <h3>Verificar conectividad y credenciales</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl --digest -u admin:Contraseña \<br>
+                &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/magicBox.cgi?action=getSystemInfo"
+            </div>
+
+            <h3>Crear un usuario de prueba</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl --digest -u admin:Contraseña -X POST \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{"UserInfoDetail":{"userInfo":[{"userID":"9999","userName":"Test Limen","userType":"0","userVerifyMode":"","validEnd":"2030.12.31 23:59:59","doors":[0]}]}}' \<br>
+                &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/AccessControl.cgi?action=insertRecordList&amp;name=UserInfoDetail"
+            </div>
+            <p>Respuesta esperada: <code>OK</code> o <code>{"result":true}</code></p>
+
+            <h3>Abrir canal 1 remotamente</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl --digest -u admin:Contraseña -X POST \<br>
+                &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/AccessControl.cgi?action=openDoor&amp;channel=1"
+            </div>
+
+            <h3>Leer eventos de acceso del último día</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl --digest -u admin:Contraseña -X POST \<br>
+                &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                &nbsp;&nbsp;-d '{"Condition":{"StartTime":"2026-05-17 00:00:00","EndTime":"2026-05-18 23:59:59","Dirs":[0],"Count":20,"Position":0}}' \<br>
+                &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/RecordFinder.cgi?action=find&amp;name=AccessControlCardRec"
+            </div>
+
+            <h3>Listar puertas configuradas</h3>
+            <div class="example-box" style="font-family: monospace; font-size: 0.85rem;">
+                curl --digest -u admin:Contraseña \<br>
+                &nbsp;&nbsp;"http://192.168.1.108/cgi-bin/AccessControl.cgi?action=getConfig&amp;name=DoorConfig"
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
